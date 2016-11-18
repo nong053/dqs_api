@@ -110,7 +110,7 @@ class UserController extends Controller
 					// $user->fill($u);
 					// $user->updated_by = Auth::user()->personnel_id;
 					// $user->save();
-					empty($u["role_id"]) :? $user->role_id = $u["role_id"];
+					empty($u["role_id"]) ?: $user->role_id = $u["role_id"];
 					$user->revised_cost_center = $u["revised_cost_center"];
 					$user->updated_by = Auth::user()->personnel_id;
 					$user->save();
