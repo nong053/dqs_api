@@ -9,7 +9,7 @@ use App\DQSUser;
 use DB;
 use Validator;
 use Auth;
-use Illuminate\Support\Collection;
+
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -39,14 +39,15 @@ class UserController extends Controller
 			left outer join dqs_role f
 			on a.role_id = f.role_id
 			where 1=1"; 
-			
+
+
 			$qinput = array();
 			
 			empty($request->personnel_id) ?: ($query .= " and a.personnel_id = ? " AND $qinput[] = $request->personnel_id);
 			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
 			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
 			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
-			empty($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+			!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
 			
 			// Get all items you want
 			$items = DB::select($query, $qinput);
@@ -72,8 +73,7 @@ class UserController extends Controller
 				or b.desc_1 like ?
 				or e.desc_1 like ?
 				or f.role_name like ?
-			", array($q, $q, $q, $q, $q, $q));
-
+			", array($q, $q, $q, $q, $q, $q));		
 		}
 
 		// Get the current page from the url if it's not set default to 1
@@ -99,7 +99,7 @@ class UserController extends Controller
 	{
 		$success = array();
 		if (empty($request->users)) {
-			return response()->json(['status' => 200, 'data' => []]);
+			return response()->json(['status' => 200, 'data' => $request->users]);
 		}
 		else
 		{
@@ -107,13 +107,13 @@ class UserController extends Controller
 				$user = DQSUser::find($u["personnel_id"]);
 				if (empty($user)) {
 				} else {
-					$user->fill($u);
-					$user->updated_by = Auth::user()->personnel_id;
-					$user->save();
-					// $user->role_id = $u["role_id"];
-					// $user->revised_cost_center = $u["revised_cost_center"];
+					// $user->fill($u);
 					// $user->updated_by = Auth::user()->personnel_id;
 					// $user->save();
+					empty($u["role_id"]) :? $user->role_id = $u["role_id"];
+					$user->revised_cost_center = $u["revised_cost_center"];
+					$user->updated_by = Auth::user()->personnel_id;
+					$user->save();
 					$suser = ['personnel_id' => $user->personnel_id, 'role_id' => $user->role_id, 'revised_cost_center' => $user->revised_cost_center];
 					$success[] = $suser;
 				}

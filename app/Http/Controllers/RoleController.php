@@ -11,6 +11,7 @@ use Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 
 class RoleController extends Controller
 {
@@ -80,18 +81,24 @@ class RoleController extends Controller
 	}
 	
 	public function destroy($role_id)
-	{
+	{	
 		try {
 			$item = DQSRole::findOrFail($role_id);
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Role not found.']);
 		}	
+
+		try {
+			$item->delete();
+		} catch (QueryException $e) {
+			if ($e->errorInfo[1] == 547) {
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please remove this Role from Authorization first.']);
+			} else {
+				return response()->json($e);
+			}
+		}
 		
-		DB::table('dqs_authorization')->where('role_id',$role_id)->delete();
-		
-		$item->delete();
-		
-		return response()->json(['status' => 200]);
+		return response()->json(['status' => 200]);		
 		
 	}
 	

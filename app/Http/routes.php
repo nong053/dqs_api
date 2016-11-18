@@ -64,6 +64,11 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_user/personnel_id', 'UserController@auto_personnel');
 	Route::patch('dqs_user', 'UserController@update');
 	Route::get('dqs_user', 'UserController@index');
+	
+	// Rule //
+	Route::delete('dqs_rule/{rule_id}', 'RuleController@destroy');
+	Route::post('dqs_rule', 'RuleController@store');
+	Route::get('dqs_rule', 'RuleController@index');
 
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

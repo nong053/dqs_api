@@ -142,14 +142,12 @@ class MenuController extends Controller
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Menu not found.']);
 		}	
-		
-	//	DB::table('dqs_authorization')->where('menu_id',$menu_id)->delete();
-	//	$item->delete();
+
 		try {
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please remove this menu from Authorization first.']);
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please remove this Menu from Authorization first.']);
 			} else {
 				return response()->json($e);
 			}
