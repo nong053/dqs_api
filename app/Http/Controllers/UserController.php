@@ -107,11 +107,15 @@ class UserController extends Controller
 				$user = DQSUser::find($u["personnel_id"]);
 				if (empty($user)) {
 				} else {
-					$user->role_id = $u["role_id"];
-					$user->revised_cost_center = $u["revised_cost_center"];
+					$user->fill($u);
 					$user->updated_by = Auth::user()->personnel_id;
 					$user->save();
-					$success[] = $user->personnel_id;
+					// $user->role_id = $u["role_id"];
+					// $user->revised_cost_center = $u["revised_cost_center"];
+					// $user->updated_by = Auth::user()->personnel_id;
+					// $user->save();
+					$suser = ['personnel_id' => $user->personnel_id, 'role_id' => $user->role_id, 'revised_cost_center' => $user->revised_cost_center];
+					$success[] = $suser;
 				}
 			}
 			return response()->json(['status' => 200, 'data' => $success]);

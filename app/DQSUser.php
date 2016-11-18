@@ -18,5 +18,5 @@ class DQSUser extends Model
 	protected $primaryKey = 'personnel_id';
 	//public $incrementing = true;
 	//public $timestamps = false;
-	protected $guarded = array();
+	protected $fillable = ['role_id','revised_cost_center'];
 }
