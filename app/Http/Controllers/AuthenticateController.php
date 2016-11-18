@@ -52,7 +52,7 @@ class AuthenticateController extends Controller
         return response()->json(['token' => $token, 'data' => ['full_name' => $full_name]]);
     }
 	
-	
+	hellooooo
 	public function destroy()
 	{
 		$token = JWTAuth::getToken();
