@@ -98,18 +98,25 @@ class UserController extends Controller
 	public function update(Request $request)
 	{
 		$success = array();
-		foreach ($request->users as $u) {
-			$user = DQSUser::find($u->personnel_id);
-			if (empty($user)) {
-			} else {
-				$user->role_id = $u["role_id"];
-				$user->revised_cost_center = $u["revised_cost_center"];
-				$user->updated_by = Auth::user()->personnel_id;
-				$user->save();
-				$success[] = $user->personnel_id;
-			}
+		if (empty($request->users)) {
+			return response()->json(['status' => 200, 'data' => []]);
 		}
-		return response()->json(['status' => 200, 'data' => $success]);
+		else
+		{
+			foreach ($request->users as $u) {
+				$user = DQSUser::find($u["personnel_id"]);
+				if (empty($user)) {
+				} else {
+					$user->role_id = $u["role_id"];
+					$user->revised_cost_center = $u["revised_cost_center"];
+					$user->updated_by = Auth::user()->personnel_id;
+					$user->save();
+					$success[] = $user->personnel_id;
+				}
+			}
+			return response()->json(['status' => 200, 'data' => $success]);
+		}
+		
 	}
 	
 	public function auto_personnel(Request $request)
