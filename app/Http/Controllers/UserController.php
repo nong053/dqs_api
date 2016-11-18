@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 
 use App\User;
-
+use App\DQSUser;
 
 use DB;
 use Validator;
@@ -26,7 +26,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
 		if (empty($request->search_all)) {
-			$query = "select a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag
+			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag
 			from dqs_user a
 			left outer join dqs_branch b
 			on a.own_cost_center = b.ccdef
@@ -95,8 +95,21 @@ class UserController extends Controller
 		return response()->json($result);
     }
 	
-	public function update()
+	public function update(Request $request)
 	{
+		$success = array();
+		foreach ($request->users as $u) {
+			$user = DQSUser::find($u->personnel_id);
+			if (empty($user)) {
+			} else {
+				$user->role_id = $u["role_id"];
+				$user->revised_cost_center = $u["revised_cost_center"];
+				$user->updated_by = Auth::user()->personnel_id;
+				$user->save();
+				$success[] = $user->personnel_id;
+			}
+		}
+		return response()->json(['status' => 200, 'data' => $success]);
 	}
 	
 	public function auto_personnel(Request $request)

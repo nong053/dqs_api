@@ -62,6 +62,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_user/cost_center', 'UserController@auto_cost_center');
 	Route::get('dqs_user/revised_cost_center', 'UserController@list_revised_cost_center');
 	Route::get('dqs_user/personnel_id', 'UserController@auto_personnel');
+	Route::patch('dqs_user', 'UserController@update');
 	Route::get('dqs_user', 'UserController@index');
 
 	Route::get('404', ['as' => 'notfound', function () {
