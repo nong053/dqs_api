@@ -34,7 +34,7 @@ class MenuController extends Controller
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
-            'menu_name' => 'required|max:255',
+            'menu_name' => 'required|max:255|unique:dqs_menu',
 			'app_url' => 'required|max:255'
         ]);
 
@@ -61,7 +61,7 @@ class MenuController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'menu_name' => 'required|max:255',
+            'menu_name' => 'required|max:255|unique:dqs_menu',
 			'app_url' => 'required|max:255'
         ]);
 
