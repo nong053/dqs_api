@@ -31,6 +31,16 @@ class RoleController extends Controller
 		return response()->json($items);
     }
 	
+	public function show($role_id)
+	{
+		try {
+			$item = DQSRole::findOrFail($role_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Role not found.']);
+		}
+		return response()->json($item);
+	}
+	
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [

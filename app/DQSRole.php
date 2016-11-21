@@ -19,4 +19,5 @@ class DQSRole extends Model
 	public $incrementing = true;
 	//public $timestamps = false;
 	protected $guarded = array();
+	protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
 }

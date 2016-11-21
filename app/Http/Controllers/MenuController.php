@@ -31,6 +31,16 @@ class MenuController extends Controller
 		return response()->json($items);
     }
 	
+	public function show($menu_id)
+	{
+		try {
+			$item = Menu::findOrFail($menu_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Menu not found.']);
+		}
+		return response()->json($item);
+	}
+	
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
