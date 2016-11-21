@@ -34,7 +34,7 @@ class RoleController extends Controller
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
-            'role_name' => 'required|max:255',
+            'role_name' => 'required|max:255|unique:dqs_role',
 			'authority_flag' => 'required|boolean',
 			'all_branch_flag' => 'required|boolean'
         ]);
@@ -63,7 +63,7 @@ class RoleController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'role_name' => 'required|max:255',
+            'role_name' => 'required|max:255|unique:dqs_role',
 			'authority_flag' => 'required|boolean',
 			'all_branch_flag' => 'required|boolean'
         ]);
