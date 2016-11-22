@@ -73,6 +73,9 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_rule/{rule_name}', 'RuleController@auto_rule');
 	Route::get('dqs_rule/{rule_id}', 'RuleController@show');
 	Route::get('dqs_rule', 'RuleController@index');
+	
+	// Region //
+	Route::resource('dqs_region', 'RegionController');	
 
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

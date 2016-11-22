@@ -25,7 +25,7 @@ class MenuController extends Controller
     public function index()
     {
         $items = DB::select("
-			select menu_id, menu_name, app_url
+			select menu_id, menu_name, app_url, menu_category
 			from dqs_menu
 		");
 		return response()->json($items);
@@ -45,7 +45,8 @@ class MenuController extends Controller
 	{
         $validator = Validator::make($request->all(), [
             'menu_name' => 'required|max:255|unique:dqs_menu',
-			'app_url' => 'required|max:255'
+			'app_url' => 'required|max:255',
+			'menu_category' => 'required|size:2'
         ]);
 
         if ($validator->fails()) {
@@ -54,6 +55,7 @@ class MenuController extends Controller
 			$item = new Menu;
 			$item->menu_name = $request->menu_name;
 			$item->app_url = $request->app_url;
+			$item->menu_category = $request->menu_category;
 			$item->created_by = Auth::user()->personnel_id;
 			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
@@ -72,7 +74,8 @@ class MenuController extends Controller
 		
         $validator = Validator::make($request->all(), [
             'menu_name' => 'required|max:255|unique:dqs_menu',
-			'app_url' => 'required|max:255'
+			'app_url' => 'required|max:255',
+			'menu_category' => 'required|size:2'
         ]);
 
         if ($validator->fails()) {
