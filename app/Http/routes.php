@@ -30,7 +30,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// Branch //
 	Route::get('dqs_branch', 'BranchController@index');
-	Route::patch('dqs_branch/{brcd}', 'BranchController@update');
+	Route::patch('dqs_branch/', 'BranchController@update');
 	Route::get('dqs_branch/export', 'BranchController@export');
 	
 	// Branch Operation //
@@ -75,6 +75,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_rule', 'RuleController@index');
 	
 	// Region //
+	Route::get('dqs_branch/region/{region_code}', 'RegionController@getRegionName');
 	Route::resource('dqs_region', 'RegionController');	
 
 	Route::get('404', ['as' => 'notfound', function () {

@@ -11,9 +11,12 @@ class Branch extends Model
      *
      * @var string
      */
+	 
+	const CREATED_AT = 'created_dttm';
+	const UPDATED_AT = 'updated_dttm';	 
     protected $table = 'dqs_branch';
 	protected $primaryKey = 'brcd';
 	public $incrementing = false;
-	public $timestamps = false;
+	//public $timestamps = false;
 	protected $guarded = array();
 }

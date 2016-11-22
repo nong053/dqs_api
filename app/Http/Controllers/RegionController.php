@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Rule;
+use App\Region;
+use App\Branch;
 
 use DB;
 use Validator;
@@ -98,9 +99,9 @@ class RegionController extends Controller
         } else {
 		
 			$branch = DB::select("
-				select 1
+				select region
 				from dqs_branch
-				where region = ?
+				where regcode = ?
 			", array($request->region_code));
 			
 			if (empty($branch)) {
@@ -108,13 +109,20 @@ class RegionController extends Controller
 			}
 			
 			$item = new Region;
-			$item->fill($request->all());
+			$item->region_code = $request->region_code;
+			$item->operation_id = $request->operation_id;
 			$item->created_by = Auth::user()->personnel_id;
 			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}
 		
 		return response()->json(['status' => 200, 'data' => $item]);	
+	}
+	
+	public function getRegionName(Request $request)
+	{
+		$item = Branch::where("regcode",$request->region_code)->select('regcode','regdesc')->first();
+		return response()->json($item);
 	}
 	
 	public function update(Request $request, $rule_id)
