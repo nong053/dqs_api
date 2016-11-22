@@ -11,9 +11,13 @@ class BranchOperation extends Model
      *
      * @var string
      */
+	const CREATED_AT = 'created_dttm';
+	const UPDATED_AT = 'updated_dttm';	 
+	
     protected $table = 'dqs_branch_operation';
 	protected $primaryKey = 'operation_id';
 	public $incrementing = true;
-	public $timestamps = false;
+//	public $timestamps = false;
 	protected $guarded = array();
+	protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
 }

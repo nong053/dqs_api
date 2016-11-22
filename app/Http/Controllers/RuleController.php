@@ -76,6 +76,16 @@ class RuleController extends Controller
 		return response()->json($result);
     }
 	
+	public function show($rule_id)
+	{
+		try {
+			$item = Rule::findOrFail($rule_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+		}
+		return response()->json($item);
+	}
+	
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
@@ -102,18 +112,23 @@ class RuleController extends Controller
 		return response()->json(['status' => 200, 'data' => $item]);	
 	}
 	
-	public function update(Request $request, $role_id)
+	public function update(Request $request, $rule_id)
 	{
 		try {
-			$item = DQSRole::findOrFail($role_id);
+			$item = Rule::findOrFail($rule_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Role not found.']);
+			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
 		}
 		
         $validator = Validator::make($request->all(), [
-            'role_name' => 'required|max:255',
-			'authority_flag' => 'required|boolean',
-			'all_branch_flag' => 'required|boolean'
+            'rule_name' => 'required|max:255|unique:dqs_rule',
+			'rule_group' => 'required|max:50',
+			'data_flow_id' => 'required|integer',
+			'initial_flag' => 'required|boolean',
+			'update_flag' => 'required|boolean',
+			'last_contact_flag' => 'required|boolean',
+			'inform_flag' => 'required|boolean',
+			'edit_rule_release_flag' => 'required|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -128,19 +143,30 @@ class RuleController extends Controller
 				
 	}
 	
+	public function auto_rule(Request $request)
+	{
+		$q = '%' . $request->q . '%';
+		$items = DB::select("
+			select top 10 rule_id, rule_name
+			from dqs_rule
+			where rule_name like ?
+		", array($q));
+		return response()->json($items);
+	}
+	
 	public function destroy($rule_id)
 	{
 		try {
 			$item = Rule::findOrFail($rule_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Role not found.']);
+			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
 		}	
 
 		try {
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that Rule this rule is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
 			} else {
 				return response()->json($e);
 			}
@@ -148,60 +174,6 @@ class RuleController extends Controller
 		
 		return response()->json(['status' => 200]);
 		
-	}
-	
-	public function roleauth($role_id)
-	{
-		try {
-			$item = DQSRole::findOrFail($role_id);
-		} catch (ModelNotFoundException $e) {
-			//return response()->json(['status' => 404, 'data' => 'Role not found.']);
-			return response()->json();
-		}
-		
-		$items = DB::select("
-			select a.menu_id, a.menu_name, 
-			  (
-				case when b.role_id is null then 0
-				else 1
-				end
-			  ) role_active
-			from dqs_menu a 
-			left outer join dqs_authorization b
-			on a.menu_id = b.menu_id
-			and b.role_id = ?
-		", array($role_id));
-		
-		return response()->json($items);
-	}
-	
-	public function authorization(Request $request, $role_id)
-	{
-	
-		try {
-			$item = DQSRole::findOrFail($role_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Role not found.']);
-		}
-		
-		DB::table('dqs_authorization')->where('role_id',$role_id)->delete();
-		
-		foreach ($request->menus as $menu) {
-			$auth = new DQSAuth;
-			$auth->role_id = $role_id;
-			$auth->menu_id = $menu;
-			$auth->created_by = Auth::user()->personnel_id;
-			$auth->save();
-		}
-		
-		$authorizes = DB::select("
-			select *
-			from dqs_authorization
-			where role_id = ?
-		", array($role_id));
-		
-		return response()->json(['status' => 200, 'data' => $authorizes]);
-	}
-		
+	}	
 	
 }
