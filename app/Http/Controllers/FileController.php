@@ -87,31 +87,69 @@ class FileController extends Controller
 		return response()->json($items);	
 	}
 	
-	public function update(Request $request, $file_id)
+	public function update(Request $request)
 	{
-		try {
-			$item = File::findOrFail($file_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'File not found.']);
-		}
+		// try {
+			// $item = File::findOrFail($file_id);
+		// } catch (ModelNotFoundException $e) {
+			// return response()->json(['status' => 404, 'data' => 'File not found.']);
+		// }
 		
-        $validator = Validator::make($request->all(), [
-            'processing_seq' => 'required|integer',
-			'contact_type' => 'required|max:255',
-			'kpi_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'source_file_delete_flag' => 'required|boolean',
-			'nof_date_delete' => 'required|integer'
-        ]);
+        // $validator = Validator::make($request->all(), [
+            // 'processing_seq' => 'required|integer',
+			// 'contact_type' => 'required|max:255',
+			// 'kpi_flag' => 'required|boolean',
+			// 'last_contact_flag' => 'required|boolean',
+			// 'source_file_delete_flag' => 'required|boolean',
+			// 'nof_date_delete' => 'required|integer'
+        // ]);
 
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->save();
+        // if ($validator->fails()) {
+            // return response()->json(['status' => 400, 'data' => $validator->errors()]);
+        // } else {
+			// $item->fill($request->all());
+			// $item->save();
+		// }
+		
+		// return response()->json(['status' => 200, 'data' => $item]);
+		
+		$errors = array();
+		$successes = array();
+		
+		$files = $request->file_list;
+		
+		
+		if (empty($files)) {
+			return response()->json(['status' => 200, 'data' => ["success" => [], "error" => []]]);
 		}
 		
-		return response()->json(['status' => 200, 'data' => $item]);
+		foreach ($files as $f) {
+			$item = File::find($f["file_id"]);
+			if (empty($item)) {
+				$errors[] = ["file_id" => $f["file_id"]];
+			} else {
+				$validator = Validator::make($f, [
+					'processing_seq' => 'required|integer',
+					'contact_type' => 'required|max:255',
+					'kpi_flag' => 'required|boolean',
+					'last_contact_flag' => 'required|boolean',
+					'source_file_delete_flag' => 'required|boolean',
+					'nof_date_delete' => 'required|integer'
+				]);
+
+				if ($validator->fails()) {
+					$errors[] = ["file_id" => $f["file_id"], "error" => $validator->errors()];
+				} else {
+					$item->fill($f);
+					$item->save();
+					$sitem = ["file_id" => $item->file_id];
+					$successes[] = $sitem;					
+				}			
+
+			}
+		}
+		
+		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);		
 		
 	}
 }

@@ -130,16 +130,16 @@ class GradeController extends Controller
 	public function destroy($rule_id)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = Grade::findOrFail($rule_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
 		}	
 
 		try {
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Grade is not referenced in another module.']);
 			} else {
 				return response()->json($e);
 			}

@@ -39,7 +39,7 @@ Route::group(['middleware' => 'cors'], function()
 	// File Management //
 	Route::get('dqs_file', 'FileController@index');
 	Route::get('dqs_file/contact_type', 'FileController@contact_type_list');
-	Route::patch('dqs_file/{file_id}', 'FileController@update');
+	Route::patch('dqs_file', 'FileController@update');
 	Route::get('dqs_file/{file_id}', 'FileController@show');
 
 	// Role //
