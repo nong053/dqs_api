@@ -30,7 +30,7 @@ class AuthenticateController extends Controller
 		$full_name = Auth::user()->full_name;
 		$dqs_user = DQSUser::find(Auth::user()->personnel_id);
 		$menus = DB::select("
-			select b.menu_name, b.app_url, b.menu_category
+			select b.menu_id, b.menu_name, b.app_url, b.menu_category
 			from dqs_authorization a
 			left outer join dqs_menu b
 			on a.menu_id = b.menu_id
@@ -62,7 +62,7 @@ class AuthenticateController extends Controller
 		$full_name = Auth::user()->full_name;
 		$dqs_user = DQSUser::find(Auth::user()->personnel_id);
 		$menus = DB::select("
-			select b.menu_name, b.app_url, b.menu_category
+			select b.menu_id, b.menu_name, b.app_url, b.menu_category
 			from dqs_authorization a
 			left outer join dqs_menu b
 			on a.menu_id = b.menu_id
