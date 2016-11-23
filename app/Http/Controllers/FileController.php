@@ -78,6 +78,15 @@ class FileController extends Controller
 		return response()->json($item);	
 	}
 	
+	public function contact_type_list()
+	{
+		$items = DB::select("
+			select distinct contact_type
+			from dqs_file
+		");
+		return response()->json($items);	
+	}
+	
 	public function update(Request $request, $file_id)
 	{
 		try {

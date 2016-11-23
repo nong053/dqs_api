@@ -122,28 +122,31 @@ class RegionController extends Controller
 		return response()->json($item);
 	}
 	
-	public function update(Request $request, $rule_id)
+	public function update(Request $request, $region_id)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = Region::findOrFail($region_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Region not found.']);
 		}
 		
         $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule',
-			'rule_group' => 'required|max:50',
-			'data_flow_id' => 'required|integer',
-			'initial_flag' => 'required|boolean',
-			'update_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'inform_flag' => 'required|boolean',
-			'edit_rule_release_flag' => 'required|boolean'
+            'region_code' => 'required|numeric|digits_between:1,18|unique:dqs_region',
+			'operation_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
+			$branch = DB::select("
+				select region
+				from dqs_branch
+				where region = ?
+			", array($request->region_code));
+			
+			if (empty($branch)) {
+				return response()->json(['status' => 400, 'data' => ['region_code' => ['Region Code not found in Branch Table']]]);
+			}		
 			$item->fill($request->all());
 			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();

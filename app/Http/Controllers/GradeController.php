@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Rule;
+use App\Grade;
 
 use DB;
 use Validator;
@@ -13,7 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 
-class RuleController extends Controller
+class GradeController extends Controller
 {
 
 	public function __construct()
@@ -25,34 +25,23 @@ class RuleController extends Controller
     public function index(Request $request)
     {
 		if (empty($request->search_all)) {
-			$query ="			
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where 1=1";			
-			
-			$qinput = array();
-			
-			empty($request->rule_group) ?: ($query .= " and a.rule_group = ? " AND $qinput[] = $request->rule_group);
-			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
-			!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
-			!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
-			!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);			
+			$query ="
+				select grade_id, processing_seq, grade, grade_name
+				from dqs_grade
+				order by processing_seq asc
+			";				
 
 			// Get all items you want
-			$items = DB::select($query, $qinput);
+			$items = DB::select($query);
 		} else {
 			$q = "%" . $request->search_all . "%";
 		//	$qflag = $request->search_all;
 			$items = DB::select("
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where a.rule_group like ?
-				or a.rule_name like ?
-				or b.data_flow_name like ?
+				select grade_id, processing_seq, grade, grade_name
+				from dqs_grade
+				where processing_seq like ?
+				or grade like ?
+				or grade_name like ?
 			", array($q, $q, $q));
 
 		}
@@ -76,12 +65,12 @@ class RuleController extends Controller
 		return response()->json($result);
     }
 	
-	public function show($rule_id)
+	public function show($grade_id)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = Grade::findOrFail($grade_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
 		}
 		return response()->json($item);
 	}
@@ -89,20 +78,15 @@ class RuleController extends Controller
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule',
-			'rule_group' => 'required|max:50',
-			'data_flow_id' => 'required|integer',
-			'initial_flag' => 'required|boolean',
-			'update_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'inform_flag' => 'required|boolean',
-			'edit_rule_release_flag' => 'required|boolean'
+            'processing_seq' => 'required|integer|unique:dqs_grade',
+			'grade' => 'required|max:50|unique:dqs_grade',
+			'grade_name' => 'required|max:255',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
-			$item = new Rule;
+			$item = new Grade;
 			$item->fill($request->all());
 			$item->created_by = Auth::user()->personnel_id;
 			$item->updated_by = Auth::user()->personnel_id;
@@ -141,17 +125,6 @@ class RuleController extends Controller
 		
 		return response()->json(['status' => 200, 'data' => $item]);
 				
-	}
-	
-	public function auto_rule(Request $request)
-	{
-		$q = '%' . $request->q . '%';
-		$items = DB::select("
-			select top 10 rule_id, rule_name
-			from dqs_rule
-			where rule_name like ?
-		", array($q));
-		return response()->json($items);
 	}
 	
 	public function destroy($rule_id)

@@ -38,6 +38,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// File Management //
 	Route::get('dqs_file', 'FileController@index');
+	Route::get('dqs_file/contact_type', 'FileController@contact_type_list');
 	Route::patch('dqs_file/{file_id}', 'FileController@update');
 	Route::get('dqs_file/{file_id}', 'FileController@show');
 
@@ -77,7 +78,10 @@ Route::group(['middleware' => 'cors'], function()
 	// Region //
 	Route::get('dqs_branch/region/{region_code}', 'RegionController@getRegionName');
 	Route::resource('dqs_region', 'RegionController');	
-
+	
+	// Grade //
+	Route::resource('dqs_grade', 'GradeController');
+	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
 	}]);
