@@ -27,33 +27,28 @@ class RegionController extends Controller
     {
 		if (empty($request->search_all)) {
 			$query ="			
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where 1=1";			
-			
-			$qinput = array();
-			
-			empty($request->rule_group) ?: ($query .= " and a.rule_group = ? " AND $qinput[] = $request->rule_group);
-			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
-			!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
-			!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
-			!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);			
+				select a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
+				from dqs_region a
+				left outer join dqs_branch b
+				on a.region_code = b.region
+				left outer join dqs_branch_operation c
+				on a.operation_id = c.operation_id";				
 
 			// Get all items you want
-			$items = DB::select($query, $qinput);
+			$items = DB::select($query);
 		} else {
 			$q = "%" . $request->search_all . "%";
 		//	$qflag = $request->search_all;
 			$items = DB::select("
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where a.rule_group like ?
-				or a.rule_name like ?
-				or b.data_flow_name like ?
+				select a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
+				from dqs_region a
+				left outer join dqs_branch b
+				on a.region_code = b.region
+				left outer join dqs_branch_operation c
+				on a.operation_id = c.operation_id
+				where a.region_code like ?
+				or b.regdesc like ?
+				or c.operation_name like ?
 			", array($q, $q, $q));
 
 		}
@@ -77,10 +72,12 @@ class RegionController extends Controller
 		return response()->json($result);
     }
 	
-	public function show($rule_id)
+	public function show($region_id)
 	{
 		try {
 			$item = Region::findOrFail($region_id);
+			$region = Branch::where("region",$item->region_code)->first();
+			$item->regdesc = $region->regdesc;
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Region not found.']);
 		}
@@ -101,7 +98,7 @@ class RegionController extends Controller
 			$branch = DB::select("
 				select region
 				from dqs_branch
-				where regcode = ?
+				where region = ?
 			", array($request->region_code));
 			
 			if (empty($branch)) {
@@ -121,7 +118,7 @@ class RegionController extends Controller
 	
 	public function getRegionName(Request $request)
 	{
-		$item = Branch::where("regcode",$request->region_code)->select('regcode','regdesc')->first();
+		$item = Branch::where("region",$request->region_code)->select('region','regdesc')->first();
 		return response()->json($item);
 	}
 	
@@ -156,30 +153,20 @@ class RegionController extends Controller
 				
 	}
 	
-	public function auto_rule(Request $request)
-	{
-		$q = '%' . $request->q . '%';
-		$items = DB::select("
-			select top 10 rule_id, rule_name
-			from dqs_rule
-			where rule_name like ?
-		", array($q));
-		return response()->json($items);
-	}
-	
-	public function destroy($rule_id)
+	public function destroy($region_id)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = Region::findOrFail($region_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Region not found.']);
 		}	
 
 		try {
+			
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Region is not referenced in another module.']);
 			} else {
 				return response()->json($e);
 			}
