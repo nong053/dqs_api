@@ -73,7 +73,7 @@ class MenuController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'menu_name' => 'required|max:255|unique:dqs_menu',
+            'menu_name' => 'required|max:255|unique:dqs_menu,menu_name,'.$item->menu_id . ',menu_id',
 			'app_url' => 'required|max:255',
 			'menu_category' => 'required|size:2'
         ]);

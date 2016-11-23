@@ -80,6 +80,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::resource('dqs_region', 'RegionController');	
 	
 	// Grade //
+	Route::get('dqs_grade/{grade_id}/condition', 'GradeController@list_condition');
 	Route::resource('dqs_grade', 'GradeController');
 	
 	Route::get('404', ['as' => 'notfound', function () {

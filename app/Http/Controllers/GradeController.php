@@ -127,10 +127,10 @@ class GradeController extends Controller
 				
 	}
 	
-	public function destroy($rule_id)
+	public function destroy($grade_id)
 	{
 		try {
-			$item = Grade::findOrFail($rule_id);
+			$item = Grade::findOrFail($grade_id);
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
 		}	
@@ -148,5 +148,29 @@ class GradeController extends Controller
 		return response()->json(['status' => 200]);
 		
 	}	
+	
+	public function list_condition($grade_id)
+	{
+		try {
+			$grade = Grade::findOrFail($grade_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
+		}	
+		
+		$grade->conditions = DB::select("
+			select a.condition_id, a.processing_seq, a.operator, a.rule_id, b.rule_name, a.complete_flag
+			from dqs_grade_condition a
+			left outer join dqs_rule b
+			on a.rule_id = b.rule_id
+			where a.grade_id = ?
+			order by a.processing_seq asc
+		", array($grade->grade_id));
+
+		return response()->json($grade);
+	}
+	
+	public function add_condition($grade_id)
+	{
+	}
 	
 }
