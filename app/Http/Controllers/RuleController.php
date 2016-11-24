@@ -112,6 +112,46 @@ class RuleController extends Controller
 		return response()->json(['status' => 200, 'data' => $item]);	
 	}
 	
+	public function update_flags(Request $request)
+	{
+		$errors = array();
+		$successes = array();
+		
+		$rules = $request->rules;
+		
+		
+		if (empty($rules)) {
+			return response()->json(['status' => 200, 'data' => ["success" => [], "error" => []]]);
+		}
+		
+		foreach ($rules as $r) {
+			$item = Rule::find($r["rule_id"]);
+			if (empty($item)) {
+				$errors[] = ["rule_id" => $r["rule_id"]];
+			} else {
+				$validator = Validator::make($r, [
+					'initial_flag' => 'required|boolean',
+					'update_flag' => 'required|boolean',
+					'last_contact_flag' => 'required|boolean',
+					'inform_flag' => 'required|boolean',
+					'edit_rule_release_flag' => 'required|boolean'
+				]);
+
+				if ($validator->fails()) {
+					$errors[] = ["rule_id" => $r["rule_id"], "error" => $validator->errors()];
+				} else {
+					$item->fill($r);
+					$item->save();
+					$sitem = ["rule_id" => $item->rule_id];
+					$successes[] = $sitem;					
+				}			
+
+			}
+		}
+		
+		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);				
+	}
+	
 	public function update(Request $request, $rule_id)
 	{
 		try {
