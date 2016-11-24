@@ -71,7 +71,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::delete('dqs_rule/{rule_id}', 'RuleController@destroy');
 	Route::post('dqs_rule', 'RuleController@store');
 	Route::patch('dqs_rule/{rule_id}', 'RuleController@update');
-	Route::get('dqs_rule/{rule_name}', 'RuleController@auto_rule');
+	Route::get('dqs_rule/rule_name', 'RuleController@auto_rule');
 	Route::get('dqs_rule/{rule_id}', 'RuleController@show');
 	Route::get('dqs_rule', 'RuleController@index');
 	Route::get('dqs_data_flow', 'RuleController@list_data_flow');
