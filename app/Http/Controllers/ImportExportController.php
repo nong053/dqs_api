@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 
+use App\SystemConfig;
 use DB;
 use Validator;
 use Auth;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
+use download;
 
 class ImportExportController extends Controller
 {
@@ -23,6 +25,9 @@ class ImportExportController extends Controller
    
     public function upload(Request $request)
     {
+		$item = SystemConfig::firstOrFail();
+		$item->kpi_date_m1 = 28;
+		$item->save();
 		$counter = 0;
 		// foreach ($request->file as $f)
 		// {
@@ -38,7 +43,8 @@ class ImportExportController extends Controller
 			// loop with $line for each line of yourfile.txt
 			$read[] = explode('|',$line);
 		}		
-		return response()->json($read);
+		$headers = array('Content-Type: application/text');		
+		return response()->download('C:/dqsfiles/mobile1.txt','test.txt',$headers);
     }
 	
 	public function show($region_id)

@@ -21,7 +21,7 @@ class SystemConfigController extends Controller
     public function index()
     {
 		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}		
@@ -31,7 +31,7 @@ class SystemConfigController extends Controller
 	public function kpi_date(Request $request)
 	{
  		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
@@ -65,7 +65,7 @@ class SystemConfigController extends Controller
 	public function export_file(Request $request)
 	{
   		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
@@ -91,7 +91,7 @@ class SystemConfigController extends Controller
 	public function import_file(Request $request)
 	{
   		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
@@ -116,7 +116,7 @@ class SystemConfigController extends Controller
 	public function warning_branch(Request $request)
 	{
   		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	
@@ -138,7 +138,7 @@ class SystemConfigController extends Controller
 	public function grade_date(Request $request)
 	{
   		try {
-			$item = SystemConfig::findOrFail(1);
+			$item = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}	

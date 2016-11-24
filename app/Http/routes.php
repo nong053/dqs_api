@@ -89,7 +89,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::resource('dqs_grade', 'GradeController');
 	
 	// Import/Export //
-	Route::post('dqs_import_export', 'ImportExportController@upload');
+	Route::get('dqs_import_export', 'ImportExportController@upload');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
