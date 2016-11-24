@@ -74,6 +74,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_rule/{rule_name}', 'RuleController@auto_rule');
 	Route::get('dqs_rule/{rule_id}', 'RuleController@show');
 	Route::get('dqs_rule', 'RuleController@index');
+	Route::get('dqs_data_flow', 'RuleController@list_data_flow');
 	
 	// Region //
 	Route::get('dqs_branch/region/{region_code}', 'RegionController@getRegionName');

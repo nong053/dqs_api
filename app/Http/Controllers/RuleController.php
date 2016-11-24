@@ -154,6 +154,15 @@ class RuleController extends Controller
 		return response()->json($items);
 	}
 	
+	public function list_data_flow()
+	{
+		$items = DB::select("
+			select *
+			from dqs_data_flow
+		");
+		return response()->json($items);		
+	}
+	
 	public function destroy($rule_id)
 	{
 		try {
