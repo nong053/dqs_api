@@ -81,7 +81,13 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// Grade //
 	Route::get('dqs_grade/{grade_id}/condition', 'GradeController@list_condition');
+	Route::post('dqs_grade/{grade_id}/condition', 'GradeController@add_condition');
+	Route::patch('dqs_grade/{grade_id}/condition/{condition_id}', 'GradeController@update_condition');
+	Route::delete('dqs_grade/{grade_id}/condition/{condition_id}', 'GradeController@delete_condition');
 	Route::resource('dqs_grade', 'GradeController');
+	
+	// Import/Export //
+	Route::post('dqs_import_export', 'ImportExportController@upload');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

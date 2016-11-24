@@ -34,7 +34,7 @@ class RuleController extends Controller
 			
 			$qinput = array();
 			
-			empty($request->rule_group) ?: ($query .= " and a.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_group) ?: ($query .= " and a.rule_group like ? " AND $qinput[] = "%" . $request->rule_group . "%");
 			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
 			!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
 			!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);

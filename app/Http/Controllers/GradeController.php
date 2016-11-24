@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Grade;
+use App\GradeCondition;
 
 use DB;
 use Validator;
@@ -169,8 +170,92 @@ class GradeController extends Controller
 		return response()->json($grade);
 	}
 	
-	public function add_condition($grade_id)
+	public function add_condition(Request $request, $grade_id)
 	{
+		try {
+			$grade = Grade::findOrFail($grade_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
+		}		
+		
+		$conditions = $request->conditions;
+		
+		if (empty($conditions)) {
+			return response()->json(['status' => 400, 'data' => "Require at least 1 Rule"]);		
+		}
+		
+		$errors = array();
+		$successes = array();
+		
+		foreach ($conditions as $c) {
+			$validator = Validator::make($c, [
+				'processing_seq' => 'required|integer',
+				'operator' => 'max:10',
+				'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,null,id,operator,'. $c['operator'],
+				'complete_flag' => 'required|boolean',
+			]);
+			if ($validator->fails()) {
+				$errors[] = ['rule_id' => $c['rule_id'], 'error' => $validator->errors()];
+			} else {
+				$item = new GradeCondition;
+				$item->fill($c);
+				$item->grade_id = $grade_id;
+				$item->created_by = Auth::user()->personnel_id;
+				$item->updated_by = Auth::user()->personnel_id;
+				$item->save();
+				$successes[] = ['rule_id' => $c['rule_id']];
+			}			
+		}
+		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);
+		
 	}
+	
+	public function update_condition(Request $request, $grade_id, $condition_id)
+	{
+		try {
+			$item = GradeCondition::findOrFail($condition_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Grade Condition not found.']);
+		}	
+		
+		$validator = Validator::make($request->all(), [
+			'processing_seq' => 'required|integer',
+			'operator' => 'max:10',
+			'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,null,id,operator,'. $request->operator,
+			'complete_flag' => 'required|boolean',
+		]);
+		
+		if ($validator->fails()) {
+			return response()->json(['status' => 400, 'data' =>  $validator->errors()]);
+		} else {
+			$item->fill($request->all());
+			$item->grade_id = $grade_id;
+			$item->updated_by = Auth::user()->personnel_id;
+			$item->save();		
+			return response()->json(['status' => 200, 'data' => $item]);
+		}
+		
+	}	
+	
+	public function delete_condition($grade_id, $condition_id)
+	{
+		try {
+			$item = GradeCondition::findOrFail($condition_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'Grade Condition not found.']);
+		}	
+
+		try {
+			$item->delete();
+		} catch (QueryException $e) {
+			if ($e->errorInfo[1] == 547) {
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Grade Condition is not referenced in another module.']);
+			} else {
+				return response()->json($e);
+			}
+		}
+		
+		return response()->json(['status' => 200]);
+	}	
 	
 }
