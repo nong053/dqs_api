@@ -131,7 +131,7 @@ class RegionController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'region_code' => 'required|numeric|digits_between:1,18|unique:dqs_region',
+            'region_code' => 'required|numeric|digits_between:1,18|unique:dqs_region,region_code,' . $region_id . ',region_id',
 			'operation_id' => 'required|integer',
         ]);
 

@@ -97,23 +97,18 @@ class GradeController extends Controller
 		return response()->json(['status' => 200, 'data' => $item]);	
 	}
 	
-	public function update(Request $request, $rule_id)
+	public function update(Request $request, $grade_id)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = Grade::findOrFail($grade_id);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Grade not found.']);
 		}
 		
         $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule',
-			'rule_group' => 'required|max:50',
-			'data_flow_id' => 'required|integer',
-			'initial_flag' => 'required|boolean',
-			'update_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'inform_flag' => 'required|boolean',
-			'edit_rule_release_flag' => 'required|boolean'
+            'processing_seq' => 'required|integer|unique:dqs_grade,processing_seq,' . $grade_id . ',grade_id',
+			'grade' => 'required|max:50|unique:dqs_grade,grade,' . $grade_id . ',grade_id',
+			'grade_name' => 'required|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -124,7 +119,7 @@ class GradeController extends Controller
 			$item->save();
 		}
 		
-		return response()->json(['status' => 200, 'data' => $item]);
+		return response()->json(['status' => 200, 'data' => $item]);	
 				
 	}
 	
