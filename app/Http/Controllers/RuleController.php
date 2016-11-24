@@ -121,7 +121,7 @@ class RuleController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule',
+            'rule_name' => 'required|max:255|unique:dqs_rule,rule_name,' . $rule_id . ',rule_id',
 			'rule_group' => 'required|max:50',
 			'data_flow_id' => 'required|integer',
 			'initial_flag' => 'required|boolean',
