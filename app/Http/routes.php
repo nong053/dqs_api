@@ -30,7 +30,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// Branch //
 	Route::get('dqs_branch', 'BranchController@index');
-	Route::patch('dqs_branch/', 'BranchController@update');
+	Route::patch('dqs_branch', 'BranchController@update');
 	Route::get('dqs_branch/export', 'BranchController@export');
 	
 	// Branch Operation //
@@ -89,7 +89,8 @@ Route::group(['middleware' => 'cors'], function()
 	Route::resource('dqs_grade', 'GradeController');
 	
 	// Import/Export //
-	Route::get('dqs_import_export', 'ImportExportController@upload');
+	Route::get('dqs_import_export/cust_type', 'ImportExportController@list_cust_type');
+	Route::post('dqs_import_export/export', 'ImportExportController@export_citizen');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

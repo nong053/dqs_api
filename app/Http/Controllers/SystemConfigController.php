@@ -6,6 +6,7 @@ use App\SystemConfig;
 
 use DB;
 use Validator;
+use Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,6 +57,7 @@ class SystemConfigController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
 			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}		
 		
@@ -82,6 +84,7 @@ class SystemConfigController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
 			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}		
  
@@ -107,6 +110,7 @@ class SystemConfigController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
 			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}		
  
@@ -129,6 +133,7 @@ class SystemConfigController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
 			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}		
  
@@ -152,6 +157,7 @@ class SystemConfigController extends Controller
             return response()->json(['status' => 400, 'data' => $validator->errors()]);
         } else {
 			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
 			$item->save();
 		}		
  

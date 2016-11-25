@@ -11,8 +11,10 @@ class SystemConfig extends Model
      *
      * @var string
      */
+	const CREATED_AT = 'created_dttm';
+	const UPDATED_AT = 'updated_dttm';	 	 
     protected $table = 'dqs_system_config';
 	protected $primaryKey = 'config_id';
-	public $timestamps = false;
+	//public $timestamps = false;
 	protected $guarded = array();
 }

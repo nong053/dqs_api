@@ -186,7 +186,7 @@ class GradeController extends Controller
 			$validator = Validator::make($c, [
 				'processing_seq' => 'required|integer',
 				'operator' => 'max:10',
-				'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,null,id,operator,'. $c['operator'],
+				'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,null,condition_id,operator,' . $c['operator'],
 				'complete_flag' => 'required|boolean',
 			]);
 			if ($validator->fails()) {
@@ -216,7 +216,7 @@ class GradeController extends Controller
 		$validator = Validator::make($request->all(), [
 			'processing_seq' => 'required|integer',
 			'operator' => 'max:10',
-			'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,null,id,operator,'. $request->operator,
+			'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. $condition_id .',condition_id,operator,' . $request->operator,
 			'complete_flag' => 'required|boolean',
 		]);
 		
