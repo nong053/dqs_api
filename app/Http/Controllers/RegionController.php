@@ -163,7 +163,20 @@ class RegionController extends Controller
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'Region not found.']);
 		}	
-
+		
+		$check = DB::select("
+			select region, count(1) as active_count
+			from dqs_branch
+			where region = ?
+			and close_flag = 0
+			group by region
+			having count(1) > 0	
+		", array($item->region_code));
+		
+		if (!empty($check)) {
+			return response()->json(['status' => 400, 'data' => 'This Region is still active in Branch Table.']);
+		}
+		
 		try {
 			
 			$item->delete();

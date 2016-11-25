@@ -78,7 +78,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::patch('dqs_rule' ,'RuleController@update_flags');
 	
 	// Region //
-	Route::get('dqs_branch/region/{region_code}', 'RegionController@getRegionName');
+	Route::post('dqs_branch/region/getRegionName', 'RegionController@getRegionName');
 	Route::resource('dqs_region', 'RegionController');	
 	
 	// Grade //
