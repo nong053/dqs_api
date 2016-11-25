@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Region;
 use App\Branch;
 
+use StdClass;
 use DB;
 use Validator;
 use Auth;
@@ -118,8 +119,13 @@ class RegionController extends Controller
 	
 	public function getRegionName(Request $request)
 	{
-		$item = Branch::where("region",$request->region_code)->select('region','regdesc')->first();
-		return response()->json($item);
+		if (empty($request->region_code)) {
+			$nothing = new StdClass;
+			return response()->json($nothing);
+		} else {
+			$item = Branch::where("region",$request->region_code)->select('region','regdesc')->first();
+			return response()->json($item);
+		}
 	}
 	
 	public function update(Request $request, $region_id)
