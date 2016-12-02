@@ -91,6 +91,13 @@ Route::group(['middleware' => 'cors'], function()
 	// Import/Export //
 	Route::get('dqs_import_export/cust_type', 'ImportExportController@list_cust_type');
 	Route::post('dqs_import_export/export', 'ImportExportController@export_citizen');
+	Route::post('dqs_import_export/export_sms', 'ImportExportController@export_sms');
+	Route::post('dqs_import_export/import', 'ImportExportController@import_citizen');
+	Route::post('dqs_import_export/import_sms', 'ImportExportController@import_sms');
+	
+	// Citizen Import //
+	Route::post('dqs_citizen_import/npid', 'CitizenImportController@auto_npid');
+	Route::resource('dqs_citizen_import', 'CitizenImportController');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
