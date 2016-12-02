@@ -133,7 +133,7 @@ class CitizenImportController extends Controller
 
 		if ($item->manual_add_flag == 1) {
 			$validator = Validator::make($request->all(), [
-				'ref_no' => 'required|max:11|unique:dqs_citizen_import',
+				'ref_no' => 'required|max:11|unique:dqs_citizen_import,ref_no,'.$request->ref_no.',ref_no',
 				'pid' => 'required|max:13',
 				'fname' => 'required|max:30',
 				'lname' => 'required|max:30',
@@ -196,39 +196,20 @@ class CitizenImportController extends Controller
 				
 	}
 	
-	public function auto_rule(Request $request)
-	{
-		$q = '%' . $request->q . '%';
-		$items = DB::select("
-			select top 10 rule_id, rule_name
-			from dqs_rule
-			where rule_name like ?
-		", array($q));
-		return response()->json($items);
-	}
 	
-	public function list_data_flow()
-	{
-		$items = DB::select("
-			select *
-			from dqs_data_flow
-		");
-		return response()->json($items);		
-	}
-	
-	public function destroy($rule_id)
+	public function destroy($ref_no)
 	{
 		try {
-			$item = Rule::findOrFail($rule_id);
+			$item = CitizenImport::findOrFail($ref_no);
 		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
+			return response()->json(['status' => 404, 'data' => 'Citizen not found.']);
 		}	
 
 		try {
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Citizen is not referenced in another module.']);
 			} else {
 				return response()->json($e);
 			}
