@@ -20,11 +20,11 @@ use Illuminate\Database\QueryException;
 class ImportExportController extends Controller
 {
 
-	// public function __construct()
-	// {
+	public function __construct()
+	{
 
-	   // $this->middleware('jwt.auth');
-	// }
+	   $this->middleware('jwt.auth');
+	}
    
    public function list_cust_type()
    {
@@ -173,8 +173,8 @@ class ImportExportController extends Controller
 					$cz->flag_1 = 0;
 					$cz->thai_flag = 0;
 					$cz->manual_add_flag = 0;
-					$cz->created_by = ""; //Auth::user()->personnel_id;
-					$cz->updated_by = ""; //Auth::user()->personnel_id;
+					$cz->created_by = Auth::user()->personnel_id;
+					$cz->updated_by = Auth::user()->personnel_id;
 					try {
 						$cz->save();
 						$insertcount += 1;
