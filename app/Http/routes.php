@@ -99,6 +99,11 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dqs_citizen_import/npid', 'CitizenImportController@auto_npid');
 	Route::resource('dqs_citizen_import', 'CitizenImportController');
 	
+	// Monitoring //
+	Route::get('dqs_monitoring_cdmd/cust_type', 'MonitoringController@list_cust_type');
+	Route::get('dqs_monitoring_cdmd/branch', 'MonitoringController@list_branch');
+	Route::get('dqs_monitoring_cdmd/rule', 'MonitoringController@list_rule');
+	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
 	}]);

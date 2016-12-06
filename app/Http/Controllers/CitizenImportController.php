@@ -36,7 +36,7 @@ class CitizenImportController extends Controller
     public function index(Request $request)
     {
 		$query ="			
-			select ref_no cif, npid, ntitle, fname, lname, dob, sex
+			select ref_no cif, npid, ntitle, fname, lname, dob, sex, manual_add_flag
 			from dqs_citizen_import
 			where 1=1";			
 		
@@ -45,6 +45,7 @@ class CitizenImportController extends Controller
 		empty($request->cif_no) ?: ($query .= " and ref_no like ? " AND $qinput[] = "%" . $request->cif_no . "%");
 		empty($request->npid) ?: ($query .= " and npid = ? " AND $qinput[] = $request->npid);
 		empty($request->flag_2) ?: ($query .= " and flag_1 = ? " AND $qinput[] = $request->flag_2);	
+		empty($request->manual_add_flag) ?: ($query .= " and manual_add_flag = ? " AND $qinput[] = $request->manual_add_flag);	
 
 		// Get all items you want
 		$items = DB::select($query, $qinput);

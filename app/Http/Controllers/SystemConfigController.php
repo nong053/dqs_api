@@ -163,4 +163,28 @@ class SystemConfigController extends Controller
  
 		return response()->json(['status' => 200, 'data' => $item]);
 	}	
+	
+	public function default_role (Request $request)
+	{
+  		try {
+			$item = SystemConfig::firstOrFail();
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
+		}	
+		
+        $validator = Validator::make($request->all(), [
+			'all_cust_grade_calculate_date' => 'required|date|date_format:Y-m-d',
+			'grade_data_source' => 'required|max:1'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 400, 'data' => $validator->errors()]);
+        } else {
+			$item->fill($request->all());
+			$item->updated_by = Auth::user()->personnel_id;
+			$item->save();
+		}		
+ 
+		return response()->json(['status' => 200, 'data' => $item]);		
+	}
 }
