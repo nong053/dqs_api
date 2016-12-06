@@ -173,8 +173,9 @@ class SystemConfigController extends Controller
 		}	
 		
         $validator = Validator::make($request->all(), [
-			'all_cust_grade_calculate_date' => 'required|date|date_format:Y-m-d',
-			'grade_data_source' => 'required|max:1'
+			'position_branch_role' => 'required|max:255',
+			'cc_poweruser_role' => 'required|max:255',
+			'position_poweruser_role' => 'required|max:255'
         ]);
 
         if ($validator->fails()) {

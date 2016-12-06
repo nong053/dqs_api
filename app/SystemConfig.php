@@ -17,4 +17,5 @@ class SystemConfig extends Model
 	protected $primaryKey = 'config_id';
 	//public $timestamps = false;
 	protected $guarded = array();
+	protected $hidden = ['created_by', 'updated_by', 'created_dttm', 'updated_dttm'];
 }

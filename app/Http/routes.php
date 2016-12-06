@@ -59,6 +59,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dqs_system_config/import_file', 'SystemConfigController@import_file');
 	Route::post('dqs_system_config/warning_branch', 'SystemConfigController@warning_branch');
 	Route::post('dqs_system_config/grade_date', 'SystemConfigController@grade_date');
+	Route::post('dqs_system_config/default_role', 'SystemConfigController@default_role');
 	
 	// User //
 	Route::get('dqs_user/cost_center', 'UserController@auto_cost_center');
