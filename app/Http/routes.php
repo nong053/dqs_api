@@ -101,9 +101,12 @@ Route::group(['middleware' => 'cors'], function()
 	Route::resource('dqs_citizen_import', 'CitizenImportController');
 	
 	// Monitoring //
-	Route::get('dqs_monitoring_cdmd/cust_type', 'MonitoringController@list_cust_type');
-	Route::get('dqs_monitoring_cdmd/branch', 'MonitoringController@list_branch');
-	Route::get('dqs_monitoring_cdmd/rule', 'MonitoringController@list_rule');
+	Route::get('dqs_monitoring/cust_type', 'MonitoringController@list_cust_type');
+	Route::get('dqs_monitoring/branch', 'MonitoringController@list_branch');
+	Route::get('dqs_monitoring/rule', 'MonitoringController@list_rule');
+	Route::get('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_details');
+	Route::patch('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_update');
+	Route::get('dqs_monitoring/cdmd', 'MonitoringController@cdmd_index');
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

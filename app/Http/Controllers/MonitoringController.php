@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\DQSValidate;
+use App\DQSInitialValidate;
 
 use DB;
 use Validator;
@@ -48,39 +50,128 @@ class MonitoringController extends Controller
 		return response()->json($items);
 	}
 	
-    public function index(Request $request)
+    public function cdmd_index(Request $request)
     {
-		if (empty($request->search_all)) {
-			$query ="			
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where 1=1";			
-			
+		// TEMPLATE QUERY 
+		// select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+		// from dqs_validate_header a
+		// left outer join dqs_validate b
+		// on a.validate_header_id = b.validate_header_id
+		// left outer join dqs_cust c
+		// on a.cif_no = c.acn
+		// where 1 = 1
+		// and a.contact_branch_code = 123
+		// and a.validate_date between sysdatetime() and sysdatetime()
+		// and a.cif_no = 123
+		// and a.cust_full_name = 1
+		// and a.cust_type_code = 123
+		// and b.rule_group = 1
+		// and b.rule_id = 1
+		// and a.risk = 12
+		// and b.validate_status = 3
+		// and c.customer_flag = 1
+		// and c.death_flag = 1
+		// and c.personnel_flag = 1
+		// and c.employee_flag = 1
+		// and a.explain_status = 1
+		// and c.affiliation_flag = 1
+		// and b.inform_flag = 1
+		// and b.release_flag = 1
+		// group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+		// order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc	
+		
+		if ($request->process_type == 'Initial') {
+			$query = "			
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, a.cif_no, a.cust_full_name, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				from dqs_initial_validate_header a
+				left outer join dqs_initial_validate b
+				on a.validate_initial_header_id = b.validate_initial_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, a.cif_no, a.cust_full_name, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+			";
+						
 			$qinput = array();
 			
-			empty($request->rule_group) ?: ($query .= " and a.rule_group like ? " AND $qinput[] = "%" . $request->rule_group . "%");
-			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
-			!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
-			!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
-			!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_full_name) ?: ($query .= " and a.cust_full_name = ? " AND $qinput[] = $request->cust_full_name);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+		
 
 			// Get all items you want
-			$items = DB::select($query, $qinput);
+			$items = DB::select($query . $qfooter, $qinput);		
 		} else {
-			$q = "%" . $request->search_all . "%";
-		//	$qflag = $request->search_all;
-			$items = DB::select("
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
-				from dqs_rule a
-				left outer join dqs_data_flow b
-				on a.data_flow_id = b.data_flow_id
-				where a.rule_group like ?
-				or a.rule_name like ?
-				or b.data_flow_name like ?
-			", array($q, $q, $q));
+			$query = "			
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, a.cif_no, a.cust_full_name, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				from dqs_validate_header a
+				left outer join dqs_validate b
+				on a.validate_header_id = b.validate_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, a.cif_no, a.cust_full_name, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+			";
+						
+			$qinput = array();
+			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_full_name) ?: ($query .= " and a.cust_full_name = ? " AND $qinput[] = $request->cust_full_name);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			!isset($request->affiliation_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+		
 
+			// Get all items you want
+			$items = DB::select($query . $qfooter, $qinput);
 		}
 
 		// Get the current page from the url if it's not set default to 1
@@ -102,153 +193,150 @@ class MonitoringController extends Controller
 		return response()->json($result);
     }
 	
-	public function show($rule_id)
+	public function cdmd_details(Request $request, $header_id)
 	{
-		try {
-			$item = Rule::findOrFail($rule_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
-		}
-		return response()->json($item);
-	}
-	
-	public function store(Request $request)
-	{
-        $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule',
-			'rule_group' => 'required|max:50',
-			'data_flow_id' => 'required|integer',
-			'initial_flag' => 'required|boolean',
-			'update_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'inform_flag' => 'required|boolean',
-			'edit_rule_release_flag' => 'required|boolean'
-        ]);
+		if ($request->process_type == 'Initial') {
+			$query = DB::select("
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				count(b.initial_validate_id) rules
+				from dqs_initial_validate_header a
+				left outer join dqs_initial_validate b
+				on a.validate_initial_header_id = b.validate_initial_header_id
+				where a.validate_initial_header_id = ?
+				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays				
+			", array($header_id));
+			$header = $query[0];
+			
+			$items = DB::select("
+				select initial_validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
+				from dqs_initial_validate
+				where validate_initial_header_id = ?
+			", array($header_id));
+			
+			// Get the current page from the url if it's not set default to 1
+			empty($request->page) ? $page = 1 : $page = $request->page;
+			
+			// Number of items per page
+			empty($request->rpp) ? $perPage = 10 : $perPage = $request->rpp;
 
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item = new Rule;
-			$item->fill($request->all());
-			$item->created_by = Auth::user()->personnel_id;
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
+			// Start displaying items from this number;
+			$offSet = ($page * $perPage) - $perPage; // Start displaying items from this number
+
+			// Get only the items you need using array_slice (only get 10 items since that's what you need)
+			$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);
+
+			// Return the paginator with only 10 items but with the count of all items and set the it on the correct page
+			$result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page);		
+			$header->rule_list = $result;
+			return response()->json($header);
+			
+		} else {
+			$query = DB::select("
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				count(b.validate_id) rules
+				from dqs_validate_header a
+				left outer join dqs_validate b
+				on a.validate_header_id = b.validate_header_id
+				where a.validate_header_id = ?
+				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)				
+			", array($header_id));
+			$header = $query[0];
+			
+			$items = DB::select("
+				select validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
+				from dqs_validate
+				where validate_header_id = ?
+			", array($header_id));
+			
+			// Get the current page from the url if it's not set default to 1
+			empty($request->page) ? $page = 1 : $page = $request->page;
+			
+			// Number of items per page
+			empty($request->rpp) ? $perPage = 10 : $perPage = $request->rpp;
+
+			// Start displaying items from this number;
+			$offSet = ($page * $perPage) - $perPage; // Start displaying items from this number
+
+			// Get only the items you need using array_slice (only get 10 items since that's what you need)
+			$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);
+
+			// Return the paginator with only 10 items but with the count of all items and set the it on the correct page
+			$result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page, ['path' => $request->url()]);	
+
+			return ['header' => $header, 'rule_list' => $result->toArray()];
+			
 		}
+
 		
-		return response()->json(['status' => 200, 'data' => $item]);	
 	}
 	
-	public function update_flags(Request $request)
-	{
-		$errors = array();
-		$successes = array();
+	public function cdmd_update(Request $request, $header_id) {	
 		
 		$rules = $request->rules;
 		
-		
-		if (empty($rules)) {
-			return response()->json(['status' => 200, 'data' => ["success" => [], "error" => []]]);
-		}
-		
-		foreach ($rules as $r) {
-			$item = Rule::find($r["rule_id"]);
-			if (empty($item)) {
-				$errors[] = ["rule_id" => $r["rule_id"]];
-			} else {
-				$validator = Validator::make($r, [
-					'initial_flag' => 'required|boolean',
-					'update_flag' => 'required|boolean',
-					'last_contact_flag' => 'required|boolean',
-					'inform_flag' => 'required|boolean',
-					'edit_rule_release_flag' => 'required|boolean'
-				]);
+		$errors = array();
+		$successes = array();		
 
-				if ($validator->fails()) {
-					$errors[] = ["rule_id" => $r["rule_id"], "error" => $validator->errors()];
-				} else {
-					$item->fill($r);
-					$item->save();
-					$sitem = ["rule_id" => $item->rule_id];
-					$successes[] = $sitem;					
-				}			
-
+		if ($request->process_type == 'Initial') {
+			$header = DB::select("
+				select validate_initial_header_id
+				from dqs_initial_validate_header
+				where validate_initial_header_id = ?
+			", array($header_id));
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Initial Validate Header not found.']);
 			}
-		}
-		
-		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);				
-	}
-	
-	public function update(Request $request, $rule_id)
-	{
-		try {
-			$item = Rule::findOrFail($rule_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
-		}
-		
-        $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|max:255|unique:dqs_rule,rule_name,' . $rule_id . ',rule_id',
-			'rule_group' => 'required|max:50',
-			'data_flow_id' => 'required|integer',
-			'initial_flag' => 'required|boolean',
-			'update_flag' => 'required|boolean',
-			'last_contact_flag' => 'required|boolean',
-			'inform_flag' => 'required|boolean',
-			'edit_rule_release_flag' => 'required|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}
-		
-		return response()->json(['status' => 200, 'data' => $item]);
 				
-	}
-	
-	public function auto_rule(Request $request)
-	{
-		$q = '%' . $request->q . '%';
-		$items = DB::select("
-			select top 10 rule_id, rule_name
-			from dqs_rule
-			where rule_name like ?
-		", array($q));
-		return response()->json($items);
-	}
-	
-	public function list_data_flow()
-	{
-		$items = DB::select("
-			select *
-			from dqs_data_flow
-		");
-		return response()->json($items);		
-	}
-	
-	public function destroy($rule_id)
-	{
-		try {
-			$item = Rule::findOrFail($rule_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Rule not found.']);
-		}	
+			foreach ($rules as $c) {
+				$validator = Validator::make($c, [
+					'kpi_flag' => 'boolean',
+					'validate_status' => 'max:50'
+				]);
+				if ($validator->fails()) {
+					$errors[] = ['initial_validate_id' => $c['initial_validate_id'], 'error' => $validator->errors()];
+				} else {
+					$item = DQSInitialValidate::find($c['initial_validate_id']);
+					$item->fill($c);
+					if ($c['kpi_flag'] == 0 && $c['validate_status'] == 'correct') {
+						$item->release_user = Auth::user()->personnel_id;
+						$item->release_dttm = date('Ymd H:i:s');
+					}
+					$item->save();
+					$successes[] = ['initial_validate_id' => $c['initial_validate_id']];
+				}			
+			}			
+		} else {
+			$header = DB::select("
+				select validate_header_id
+				from dqs_validate_header
+				where validate_header_id = ?
+			", array($header_id));
 
-		try {
-			$item->delete();
-		} catch (QueryException $e) {
-			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
-			} else {
-				return response()->json($e);
-			}
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Validate Header not found.']);
+			}		
+			
+			foreach ($rules as $c) {
+				$validator = Validator::make($c, [
+					'kpi_flag' => 'boolean',
+					'validate_status' => 'max:50'
+				]);
+				if ($validator->fails()) {
+					$errors[] = ['initial_validate_id' => $c['validate_id'], 'error' => $validator->errors()];
+				} else {
+					$item = DQSValidate::find($c['validate_id']);
+					$item->fill($c);
+					if ($c['kpi_flag'] == 0 && $c['validate_status'] == 'correct') {
+						$item->release_user = Auth::user()->personnel_id;
+						$item->release_dttm = date('Ymd H:i:s');
+					}
+					$item->save();
+					$successes[] = ['validate_id' => $c['validate_id']];
+				}			
+			}					
 		}
 		
-		return response()->json(['status' => 200]);
-		
-	}	
+		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);		
+	}
 	
 }
