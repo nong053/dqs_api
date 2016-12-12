@@ -107,7 +107,17 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_update');
 	Route::get('dqs_monitoring/cdmd', 'MonitoringController@cdmd_index');
+	Route::patch('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_update');
+	Route::get('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_details');
+	Route::get('dqs_monitoring/branch', 'MonitoringController@branch_index');
 	
+	// Maintenance //
+	Route::get('dqs_maintenance/contact_type', 'MaintenanceController@contact_type');
+	Route::get('dqs_maintenance/import_log', 'MaintenanceController@import_log');
+	Route::get('dqs_maintenance/reject_log', 'MaintenanceController@reject_log');
+	Route::get('dqs_maintenance/usage_log', 'MaintenanceController@usage_log');
+	Route::post('dqs_maintenance/personnel_name', 'MaintenanceController@auto_personnel_name');
+
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
 	}]);
