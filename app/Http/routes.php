@@ -102,7 +102,7 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// Monitoring //
 	Route::get('dqs_monitoring/cust_type', 'MonitoringController@list_cust_type');
-	Route::get('dqs_monitoring/branch', 'MonitoringController@list_branch');
+	Route::get('dqs_monitoring/branch_list', 'MonitoringController@list_branch');
 	Route::get('dqs_monitoring/rule', 'MonitoringController@list_rule');
 	Route::get('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_update');
