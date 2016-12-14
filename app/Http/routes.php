@@ -107,10 +107,16 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_monitoring/rule', 'MonitoringController@list_rule');
 	Route::get('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_update');
+	Route::get('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_explain_details');
+	Route::patch('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_update_explain');
 	Route::get('dqs_monitoring/cdmd', 'MonitoringController@cdmd_index');
 	Route::patch('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_update');
 	Route::get('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_details');
+	Route::get('dqs_monitoring/branch/{header_id}/explain', 'MonitoringController@branch_explain_details');
+	Route::patch('dqs_monitoring/branch/{header_id}/explain', 'MonitoringController@branch_update_explain');
 	Route::get('dqs_monitoring/branch', 'MonitoringController@branch_index');
+	Route::post('dqs_monitoring/branch/{header_id}/explain', 'MonitoringController@branch_upload_explain');
+	Route::delete('dqs_monitoring/branch/{header_id}/explain/{file_id}', 'MonitoringController@branch_delete_explain');
 	
 	// Maintenance //
 	Route::get('dqs_maintenance/contact_type', 'MaintenanceController@contact_type');

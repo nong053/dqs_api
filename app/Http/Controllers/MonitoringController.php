@@ -4,10 +4,16 @@ namespace App\Http\Controllers;
 
 use App\DQSValidate;
 use App\DQSInitialValidate;
+use App\DQSValidateHeader;
+use App\DQSInitialValidateHeader;
+use App\DQSRole;
+use App\DQSUser;
+use App\ExplainFile;
 
 use DB;
 use Validator;
 use Auth;
+use File;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,7 +25,6 @@ class MonitoringController extends Controller
 
 	public function __construct()
 	{
-
 	   $this->middleware('jwt.auth');
 	}
    
@@ -268,6 +273,119 @@ class MonitoringController extends Controller
 		}
 
 		
+	}
+	
+	public function cdmd_explain_details(Request $request, $header_id)
+	{
+		if ($request->process_type == 'Initial') {
+			$item = DB::select("
+				select explain_remark, explain_status, explain_user, explain_dttm, approve_user, approve_dttm
+				from dqs_initial_validate_header
+				where validate_initial_header_id = ?
+			", array($header_id));
+			if (empty($item)) {
+				return response()->json(['status' => 404, 'data' => 'Initial Validate Header not found.']);
+			} else {
+				$files = DB::select("
+					select explain_file_id, validate_initial_header_id, file_path
+					from dqs_explain_file
+					where validate_initial_header_id = ?
+				", array($header_id));
+				$item[0]->explain_files = $files;
+			}
+		} else {
+			$item = DB::select("
+				select explain_remark, explain_status, explain_user, explain_dttm, approve_user, approve_dttm
+				from dqs_validate_header
+				where validate_header_id = ?
+			", array($header_id));
+			if (empty($item)) {
+				return response()->json(['status' => 404, 'data' => 'Validate Header not found.']);
+			} else {
+				$files = DB::select("
+					select explain_file_id, validate_header_id, file_path
+					from dqs_explain_file
+					where validate_header_id = ?
+				", array($header_id));
+				$item[0]->explain_files = $files;
+			}		
+		}
+		
+		return response()->json($item[0]);
+	}
+	
+	public function cdmd_update_explain(Request $request, $header_id)
+	{
+		if ($request->process_type == 'Initial') {
+			$header = DB::select("
+				select validate_initial_header_id
+				from dqs_initial_validate_header
+				where validate_initial_header_id = ?
+			", array($header_id));
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Initial Validate Header not found.']);
+			}
+				
+			$validator = Validator::make($request->all(), [
+				'explain_remark' => 'max:1',
+				'explain_status' => 'required|max:50'
+			]);
+			if ($validator->fails()) {
+				return response()->json(['status' => 400, 'data' => $validator->errors()]);
+			} else {
+				$item = DQSInitialValidateHeader::find($header_id);
+				$item->explain_remark = $request->explain_remark;
+				$checkrole = DQSRole::find(Auth::user()->role_id);
+				if (empty($checkrole)) {
+					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+				}
+				
+				if ($request->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
+					$item->explain_status = $request->explain_status;
+					$item->approve_user = Auth::user()->personnel_id;
+					$item->approve_dttm = date('Y-m-d H:i:s');					
+				} else {
+				}
+				$item->save();
+			}			
+		
+		} else {
+		
+			$header = DB::select("
+				select validate_header_id
+				from dqs_validate_header
+				where validate_header_id = ?
+			", array($header_id));
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Validate Header not found.']);
+			}
+				
+			$validator = Validator::make($request->all(), [
+				'explain_remark' => 'max:1',
+				'explain_status' => 'required|max:50'
+			]);
+			if ($validator->fails()) {
+				return response()->json(['status' => 400, 'data' => $validator->errors()]);
+			} else {
+				$item = DQSValidateHeader::find($header_id);
+				$item->explain_remark = $request->explain_remark;
+				$checkuser = DQSUser::find(Auth::user()->personnel_id);
+				$checkrole = DQSRole::find($checkuser->role_id);
+				if (empty($checkrole)) {
+					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+				}
+				
+				if ($item->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
+					$item->explain_status = $request->explain_status;
+					$item->approve_user = Auth::user()->personnel_id;
+					$item->approve_dttm = date('Y-m-d H:i:s');
+				} else {
+				}
+				$item->save();
+			}	
+		}
+		
+		return response()->json(['status' => 200, 'data' => $item]);	
 	}
 	
 	public function cdmd_update(Request $request, $header_id) {	
@@ -544,6 +662,204 @@ class MonitoringController extends Controller
 
 		
 	}	
+	
+	public function branch_explain_details(Request $request, $header_id)
+	{
+		if ($request->process_type == 'Initial') {
+			$item = DB::select("
+				select explain_remark, explain_status, explain_user, explain_dttm, approve_user, approve_dttm
+				from dqs_initial_validate_header
+				where validate_initial_header_id = ?
+			", array($header_id));
+			if (empty($item)) {
+				return response()->json(['status' => 404, 'data' => 'Initial Validate Header not found.']);
+			} else {
+				$files = DB::select("
+					select explain_file_id, validate_initial_header_id, file_path
+					from dqs_explain_file
+					where validate_initial_header_id = ?
+				", array($header_id));
+				$item[0]->explain_files = $files;
+			}
+		} else {
+			$item = DB::select("
+				select explain_remark, explain_status, explain_user, explain_dttm, approve_user, approve_dttm
+				from dqs_validate_header
+				where validate_header_id = ?
+			", array($header_id));
+			if (empty($item)) {
+				return response()->json(['status' => 404, 'data' => 'Validate Header not found.']);
+			} else {
+				$files = DB::select("
+					select explain_file_id, validate_header_id, file_path
+					from dqs_explain_file
+					where validate_header_id = ?
+				", array($header_id));
+				$item[0]->explain_files = $files;
+			}		
+		}
+		
+		return response()->json($item[0]);
+	}	
+	
+	public function branch_update_explain(Request $request, $header_id)
+	{
+		if ($request->process_type == 'Initial') {
+			$header = DB::select("
+				select validate_initial_header_id
+				from dqs_initial_validate_header
+				where validate_initial_header_id = ?
+			", array($header_id));
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Initial Validate Header not found.']);
+			}
+				
+			$validator = Validator::make($request->all(), [
+				'explain_remark' => 'max:1'
+			]);
+			if ($validator->fails()) {
+				return response()->json(['status' => 400, 'data' => $validator->errors()]);
+			} else {
+				$item = DQSInitialValidateHeader::find($header_id);
+				
+				$checkrole = DQSRole::find(Auth::user()->role_id);
+				if (empty($checkrole)) {
+					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+				}
+				
+				if ($checkrole->authority_flag == 1) {
+					$item->explain_remark = $request->explain_remark;				
+				} else {
+				}
+				$item->save();
+			}			
+		
+		} else {
+		
+			$header = DB::select("
+				select validate_header_id
+				from dqs_validate_header
+				where validate_header_id = ?
+			", array($header_id));
+			if (empty($header)) {
+				return response()->json(['status' => 404, 'data' => 'Validate Header not found.']);
+			}
+				
+			$validator = Validator::make($request->all(), [
+				'explain_remark' => 'max:1'
+			]);
+			if ($validator->fails()) {
+				return response()->json(['status' => 400, 'data' => $validator->errors()]);
+			} else {
+				$item = DQSValidateHeader::find($header_id);
+				
+				$checkuser = DQSUser::find(Auth::user()->personnel_id);
+				$checkrole = DQSRole::find($checkuser->role_id);
+				if (empty($checkrole)) {
+					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+				}
+				
+				if ($checkrole->authority_flag == 1) {
+					$item->explain_remark = $request->explain_remark;
+				} else {
+				}
+				$item->save();
+			}	
+		}
+		
+		return response()->json(['status' => 200, 'data' => $item]);	
+	}	
+	
+	public function branch_upload_explain(Request $request, $header_id)
+	{
+		$checkuser = DQSUser::find(Auth::user()->personnel_id);
+		$checkrole = DQSRole::find($checkuser->role_id);	
+
+		if (empty($checkrole)) {
+			return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+		}		
+		
+		if ($checkrole->authority_flag == 0) {
+			return response()->json(['status' => 405, 'data' => 'No permission to upload for this user.']);
+		}
+		
+		$result = array();	
+		if ($request->process_type == 'Initial') {		
+			$path = $_SERVER['DOCUMENT_ROOT'] . '/dqs_api/public/explain_files/initial_validate/' . $header_id . '/';
+			foreach ($request->file() as $f) {
+				$f->move($path,$f->getClientOriginalName());
+				$item = ExplainFile::firstOrNew(array('file_path' => 'explain_files/initial_validate/' . $header_id . '/' . $f->getClientOriginalName()));
+				$item->validate_initial_header_id = $header_id;
+			//	$item->file_path = 'explain_files/initial_validate/' . $header_id . '/' . $f->getClientOriginalName();
+				$item->save();
+				$result[] = $item;
+				$header = DQSInitialValidateHeader::find($header_id);
+				if (empty($header)) {
+					return response()->json(['status' => 400, 'data' => 'Initial Validate Header not found.']);
+				}						
+				$header->explain_status = '1-Waiting';
+				$header->save();
+			}
+		} else {
+			$path = $_SERVER['DOCUMENT_ROOT'] . '/dqs_api/public/explain_files/validate/' . $header_id . '/';
+			foreach ($request->file() as $f) {
+				$f->move($path,$f->getClientOriginalName());
+				$item = ExplainFile::firstOrNew(array('file_path' => 'explain_files/validate/' . $header_id . '/' . $f->getClientOriginalName()));
+				$item->validate_header_id = $header_id;
+				//$item->file_path = 'explain_files/validate/' . $header_id . '/' . $f->getClientOriginalName();
+				$item->save();
+				$result[] = $item;
+				$header = DQSValidateHeader::find($header_id);
+				if (empty($header)) {
+					return response()->json(['status' => 400, 'data' => 'Validate Header not found.']);
+				}						
+				$header->explain_status = '1-Waiting';
+				$header->save();				
+			}		
+		}
+		return response()->json(['status' => 200, 'data' => $result]);
+	}
+	
+	public function branch_delete_explain(Request $request, $header_id, $file_id)
+	{
+		$checkuser = DQSUser::find(Auth::user()->personnel_id);
+		$checkrole = DQSRole::find($checkuser->role_id);	
+
+		if (empty($checkrole)) {
+			return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+		}		
+		
+		if ($checkrole->authority_flag == 0) {
+			return response()->json(['status' => 405, 'data' => 'No permission to delete for this user.']);
+		}
+		
+		try {
+			$item = ExplainFile::findOrFail($file_id);
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'File not found.']);
+		}
+		File::Delete($_SERVER['DOCUMENT_ROOT'] . '/dqs_api/public/' . $item->file_path);		
+		$item->delete();
+		
+		if ($request->process_type == 'Initial') {
+			$header = DQSInitialValidateHeader::find($header_id);
+			if (empty($header)) {
+				return response()->json(['status' => 400, 'data' => 'Initial Validate Header not found.']);
+			}						
+			$header->explain_status = '4-Not Explain';
+			$header->save();		
+		} else {
+			$header = DQSValidateHeader::find($header_id);
+			if (empty($header)) {
+				return response()->json(['status' => 400, 'data' => 'Validate Header not found.']);
+			}						
+			$header->explain_status = '4-Not Explain';
+			$header->save();		
+		}
+		
+		return response()->json(['status' => 200]);
+		
+	}
 	
 	public function branch_update(Request $request, $header_id) {	
 		
