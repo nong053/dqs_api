@@ -67,6 +67,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_user/personnel_id', 'UserController@auto_personnel');
 	Route::patch('dqs_user', 'UserController@update');
 	Route::get('dqs_user', 'UserController@index');
+	Route::post('dqs_user/export', 'UserController@export');
 	
 	// Rule //
 	Route::delete('dqs_rule/{rule_id}', 'RuleController@destroy');

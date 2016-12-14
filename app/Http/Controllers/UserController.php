@@ -9,6 +9,7 @@ use App\DQSUser;
 use DB;
 use Validator;
 use Auth;
+use Excel;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
@@ -23,6 +24,78 @@ class UserController extends Controller
 	   $this->middleware('jwt.auth');
 	}
 	 
+	public function export(Request $request) 
+	{
+		if (empty($request->search_all)) {
+			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
+			from dqs_user a
+			left outer join dqs_branch b
+			on a.own_cost_center = b.ccdef
+			left outer join dqs_region c
+			on b.region = c.region_code
+			left outer join dqs_branch_operation d
+			on c.operation_id = d.operation_id
+			left outer join dqs_branch e
+			on a.revised_cost_center = e.ccdef
+			left outer join dqs_role f
+			on a.role_id = f.role_id
+			where 1=1"; 
+
+
+			$qinput = array();
+			
+			empty($request->personnel_id) ?: ($query .= " and a.personnel_id = ? " AND $qinput[] = $request->personnel_id);
+			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
+			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
+			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
+			!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+			
+			// Get all items you want
+			$items = DB::select($query, $qinput);
+		} else {
+			$q = "%" . $request->search_all . "%";
+			$items = DB::select("
+				select a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
+				from dqs_user a
+				left outer join dqs_branch b
+				on a.own_cost_center = b.ccdef
+				left outer join dqs_region c
+				on b.region = c.region_code
+				left outer join dqs_branch_operation d
+				on c.operation_id = d.operation_id
+				left outer join dqs_branch e
+				on a.revised_cost_center = e.ccdef
+				left outer join dqs_role f
+				on a.role_id = f.role_id
+				where a.thai_full_name like ?
+				or a.position_name like ?
+				or d.operation_name like ?
+				or b.desc_1 like ?
+				or e.desc_1 like ?
+				or f.role_name like ?
+			", array($q, $q, $q, $q, $q, $q));		
+		}
+		
+		$filename = "USER_" . date('dm') .  substr(date('Y') + 543,2,2);
+		$x = Excel::create($filename, function($excel) use($items, $filename) {
+
+			$excel->sheet($filename, function($sheet) use($items) {
+				$sheet->appendRow(array('Personnel Name', 'Own Cost Center', 'Revised Cost Center', 'Role', 'Created Date', 'Terminate Date'));
+				foreach ($items as $i) {
+					$sheet->appendRow(array(
+						$i->thai_full_name, 
+						$i->own_cost_center, 
+						$i->revised_cost_center, 
+						$i->role_name, 
+						$i->created_date, 
+						$i->terminate_date
+						));
+				}
+			});
+
+		})->export('xls');			
+	}
+	
     public function index(Request $request)
     {
 		if (empty($request->search_all)) {
