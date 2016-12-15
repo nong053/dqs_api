@@ -8,6 +8,7 @@ use Auth;
 //use Adldap;
 //use JWTAuth;
 use DB;
+use File;
 use Validator;
 use Excel;
 use Illuminate\Http\Request;
@@ -90,6 +91,18 @@ class BranchController extends Controller
 			
 	}
 	
+	public function recal_kpi(Request $request)
+	{
+		$param = ' -PLocaleUTF8 -R"Repo_WIN-MPNE686ADQV.txt"  -G"a38aebe8_e108_4ea5_9ed0_ee55bfd8837b" -t5 -T14 -LocaleGV -GV"$JobName=J0tQSUNhbGN1bGF0aW9uUHJvY2Vzcyc;$G_BranchCode='. $request->ccdef .'" -GV"MDEwMTAxMDEwMTA;"   -CtBatch -CmWIN-MPNE686ADQV -CaAdministrator -CjWIN-MPNE686ADQV -Cp3500';
+		$batch = 'C:/Development/BatchScript/OP_KPICalculation_BJ.bat';
+		$file_param = 'C:/Development/BatchScript/OP_KPICalculation_BJ.txt';
+		File::Delete($file_param);	
+		File::put($file_param, $param);
+		$result = exec($batch);
+		return response()->json(['status' => 200, 'data' => $result]);
+	}
+	
+
 	public function export()
 	{
 		$x = Excel::create('Filename', function($excel) {

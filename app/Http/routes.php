@@ -32,6 +32,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_branch', 'BranchController@index');
 	Route::patch('dqs_branch', 'BranchController@update');
 	Route::get('dqs_branch/export', 'BranchController@export');
+	Route::post('dqs_branch/recal_kpi', 'BranchController@recal_kpi');
 	
 	// Branch Operation //
 	Route::resource('dqs_branch_operation', 'BranchOperationController');
