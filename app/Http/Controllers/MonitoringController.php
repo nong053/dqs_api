@@ -31,7 +31,7 @@ class MonitoringController extends Controller
 	public function list_branch()
 	{
 		$items = DB::select("
-			select brcd, desc_1
+			select brcd, [desc]
 			from dqs_branch
 		"); // to be filtered by role
 		return response()->json($items);
@@ -40,7 +40,7 @@ class MonitoringController extends Controller
 	public function list_cust_type()
 	{
 		$items = DB::select("
-			select gsbccode, desc_1
+			select gsbccode, [desc]
 			from dqs_cust_type
 		"); // to be filtered by role
 		return response()->json($items);

@@ -23,7 +23,7 @@ class BranchOperationController extends Controller
     public function index()
     {
         $items = DB::select("
-			select a.operation_id, a.operation_name, b.ccdef, b.desc_1 cost_center
+			select a.operation_id, a.operation_name, b.ccdef, b.[desc] cost_center
 			from dqs_branch_operation a
 			left outer join dqs_branch b
 			on a.cost_center = b.ccdef

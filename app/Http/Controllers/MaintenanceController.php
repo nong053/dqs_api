@@ -81,7 +81,7 @@ class MaintenanceController extends Controller
 	public function reject_log(Request $request)
 	{
 		$query ="			
-			select file_name, a.reject_date, cif_no, own_branch_code, c.desc_1 own_branch, a.contact_branch_code, d.desc_1 contact_branch, citizen_id, birth_date, reject_desc
+			select file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
 			from dqs_reject_log a
 			left outer join dqs_file b
 			on a.file_id = b.file_id
@@ -156,7 +156,7 @@ class MaintenanceController extends Controller
 	public function usage_log(Request $request)
 	{
 		$query ="			
-			select a.usage_dttm, a.personnel_id, b.thai_full_name, c.menu_name, d.desc_1 branch_name
+			select a.usage_dttm, a.personnel_id, b.thai_full_name, c.menu_name, d.[desc] branch_name
 			from dqs_usage_log a
 			left outer join dqs_user b
 			on a.personnel_id = b.personnel_id

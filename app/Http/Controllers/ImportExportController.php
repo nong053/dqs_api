@@ -29,7 +29,7 @@ class ImportExportController extends Controller
    public function list_cust_type()
    {
 		$items = DB::select("
-			select gsbccode, desc_1
+			select gsbccode, [desc]
 			from dqs_cust_type
 			where persflg = 1
 		");

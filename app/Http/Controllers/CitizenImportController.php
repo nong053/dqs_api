@@ -45,8 +45,14 @@ class CitizenImportController extends Controller
 		empty($request->cif_no) ?: ($query .= " and ref_no like ? " AND $qinput[] = "%" . $request->cif_no . "%");
 		empty($request->npid) ?: ($query .= " and npid = ? " AND $qinput[] = $request->npid);
 		empty($request->flag_2) ?: ($query .= " and flag_1 = ? " AND $qinput[] = $request->flag_2);	
-		empty($request->manual_add_flag) ?: ($query .= " and manual_add_flag = ? " AND $qinput[] = $request->manual_add_flag);	
-
+		//empty($request->manual_add_flag) ?: ($query .= " and manual_add_flag = ? " AND $qinput[] = $request->manual_add_flag);	
+		
+		if ($request->manual_add_flag == '') {
+		} else {
+			$query .= " and manual_add_flag = ? ";
+			$qinput[] = $request->manual_add_flag;
+		}
+		
 		// Get all items you want
 		$items = DB::select($query, $qinput);
 

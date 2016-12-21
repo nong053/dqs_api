@@ -23,11 +23,11 @@ class UserController extends Controller
 	{
 	   $this->middleware('jwt.auth');
 	}
-	 
+
 	public function export(Request $request) 
 	{
 		if (empty($request->search_all)) {
-			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
+			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.[desc] own_cost_center,e.ccdef revised_ccdef, e.[desc] revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
 			from dqs_user a
 			left outer join dqs_branch b
 			on a.own_cost_center = b.ccdef
@@ -48,14 +48,19 @@ class UserController extends Controller
 			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
 			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
 			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
-			!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+			//!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+			if ($request->active_flag == '') {
+			} else {
+				$query .= " and a.active_flag = ? ";
+				$qinput[] = $request->active_flag;
+			}
 			
 			// Get all items you want
 			$items = DB::select($query, $qinput);
 		} else {
 			$q = "%" . $request->search_all . "%";
-			$items = DB::select("
-				select a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
+			$items = DB::select('
+				select a.thai_full_name, a.position_name, d.operation_name, b.[desc] own_cost_center,e.ccdef revised_ccdef, e.[desc] revised_cost_center, f.role_id, f.role_name, a.active_flag, a.created_date, a.terminate_date
 				from dqs_user a
 				left outer join dqs_branch b
 				on a.own_cost_center = b.ccdef
@@ -70,10 +75,10 @@ class UserController extends Controller
 				where a.thai_full_name like ?
 				or a.position_name like ?
 				or d.operation_name like ?
-				or b.desc_1 like ?
-				or e.desc_1 like ?
+				or b.[desc] like ?
+				or e.[desc] like ?
 				or f.role_name like ?
-			", array($q, $q, $q, $q, $q, $q));		
+			', array($q, $q, $q, $q, $q, $q));		
 		}
 		
 		$filename = "USER_" . date('dm') .  substr(date('Y') + 543,2,2);
@@ -99,7 +104,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
 		if (empty($request->search_all)) {
-			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag
+			$query = "select a.personnel_id, a.thai_full_name, a.position_name, d.operation_name, b.[desc] own_cost_center,e.ccdef revised_ccdef, e.[desc] revised_cost_center, f.role_id, f.role_name, a.active_flag
 			from dqs_user a
 			left outer join dqs_branch b
 			on a.own_cost_center = b.ccdef
@@ -120,15 +125,21 @@ class UserController extends Controller
 			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
 			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
 			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
-			!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+		//	!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
+			if ($request->active_flag == '') {
+			} else {
+				$query .= " and a.active_flag = ? ";
+				$qinput[] = $request->active_flag;
+			}
+			
 			
 			// Get all items you want
 			$items = DB::select($query, $qinput);
 		} else {
 			$q = "%" . $request->search_all . "%";
 		//	$qflag = $request->search_all;
-			$items = DB::select("
-				select a.thai_full_name, a.position_name, d.operation_name, b.desc_1 own_cost_center,e.ccdef revised_ccdef, e.desc_1 revised_cost_center, f.role_id, f.role_name, a.active_flag
+			$items = DB::select('
+				select a.thai_full_name, a.position_name, d.operation_name, b.[desc] own_cost_center,e.ccdef revised_ccdef, e.[desc] revised_cost_center, f.role_id, f.role_name, a.active_flag
 				from dqs_user a
 				left outer join dqs_branch b
 				on a.own_cost_center = b.ccdef
@@ -143,10 +154,10 @@ class UserController extends Controller
 				where a.thai_full_name like ?
 				or a.position_name like ?
 				or d.operation_name like ?
-				or b.desc_1 like ?
-				or e.desc_1 like ?
+				or b.[desc] like ?
+				or e.[desc] like ?
 				or f.role_name like ?
-			", array($q, $q, $q, $q, $q, $q));		
+			', array($q, $q, $q, $q, $q, $q));		
 		}
 
 		// Get the current page from the url if it's not set default to 1
@@ -209,21 +220,22 @@ class UserController extends Controller
 	
 	public function list_revised_cost_center()
 	{
-		$items = DB::select("
-			select distinct ccdef, desc_1
+		// to remove top 10 later
+		$items = DB::select('
+			select distinct top 10 ccdef, dqs_branch.[desc]
 			from dqs_branch
-		");
+		');
 		return response()->json($items);
 	}
 	
 	public function auto_cost_center(Request $request)
 	{
 		$q = '%' . $request->q . '%';
-		$items = DB::select("
-			select distinct top 10 ccdef, desc_1
+		$items = DB::select('
+			select distinct top 10 ccdef, dqs_branch.[desc]
 			from dqs_branch
-			where desc_1 like ?
-		", array($q));
+			where dqs_branch.[desc] like ?
+		', array($q));
 		return response()->json($items);
 	}
 	
