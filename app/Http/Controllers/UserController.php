@@ -45,8 +45,8 @@ class UserController extends Controller
 			$qinput = array();
 			
 			empty($request->personnel_id) ?: ($query .= " and a.personnel_id = ? " AND $qinput[] = $request->personnel_id);
-			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
-			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
+			empty($request->own_cost_center) ?: ($query .= " and b.[desc] like ? " AND $qinput[] = '%' . $request->own_cost_center . '%');
+			empty($request->revised_cost_center) ?: ($query .= " and e.[desc] like ? " AND $qinput[] = '%' . $request->revised_cost_center . '%');
 			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
 			//!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
 			if ($request->active_flag == '') {
@@ -122,8 +122,8 @@ class UserController extends Controller
 			$qinput = array();
 			
 			empty($request->personnel_id) ?: ($query .= " and a.personnel_id = ? " AND $qinput[] = $request->personnel_id);
-			empty($request->own_cost_center) ?: ($query .= " and b.ccdef = ? " AND $qinput[] = $request->own_cost_center);
-			empty($request->revised_cost_center) ?: ($query .= " and e.ccdef = ? " AND $qinput[] = $request->revised_cost_center);
+			empty($request->own_cost_center) ?: ($query .= " and b.[desc] like ? " AND $qinput[] = '%' . $request->own_cost_center . '%');
+			empty($request->revised_cost_center) ?: ($query .= " and e.[desc] like ? " AND $qinput[] = '%' . $request->revised_cost_center . '%');
 			empty($request->role_id) ?: ($query .= " and f.role_id = ? " AND $qinput[] = $request->role_id);
 		//	!isset($request->active_flag) ?: ($query .= " and a.active_flag = ? " AND $qinput[] = $request->active_flag);
 			if ($request->active_flag == '') {
