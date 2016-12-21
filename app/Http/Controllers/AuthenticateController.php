@@ -12,6 +12,7 @@ use JWTAuth;
 use App\User;
 use Auth;
 use DB;
+use Adldap;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Adldap\Exceptions\Auth\BindException;
 //use Tymon\JWTAuth\Exceptions\TokenBlacklistedException;
@@ -27,8 +28,11 @@ class AuthenticateController extends Controller
    
     public function index()
     {
-		$full_name = Auth::user()->full_name;
 		$dqs_user = DQSUser::find(Auth::user()->personnel_id);
+		if (empty($dqs_user)) {
+			return response()->json(['error' => 'User not found.'], 403);
+		}		
+		$full_name = $dqs_user->thai_full_name;
 		$menus = DB::select("
 			select b.menu_id, b.menu_name, b.app_url, b.menu_category
 			from dqs_authorization a
@@ -41,7 +45,19 @@ class AuthenticateController extends Controller
   
     public function authenticate(Request $request)
     {
+		// if (Adldap::auth()->attempt($request->username, $request->password)) {
+			// return 'pass';
+		// } else {
+			// return 'fail';
+		// }
+		
         $credentials = $request->only('user_name', 'password');
+		// if (Auth::attempt($credentials)) {
+			// return 'pass';
+		// } else {
+			// return 'fail';
+		// }	
+    
 
         try {
             // verify the credentials and create a token for the user
@@ -54,13 +70,19 @@ class AuthenticateController extends Controller
         } catch (BindException $e) {
 			return response()->json(['error' => 'Cannot connect to LDAP Server.'], 500);
 		}
-
+		
         // if no errors are encountered we can return a JWT
 		
 		//$user = User::find($request->user_name);
 		//return response()->json($user);
-		$full_name = Auth::user()->full_name;
 		$dqs_user = DQSUser::find(Auth::user()->personnel_id);
+		
+		if (empty($dqs_user)) {
+			return response()->json(['error' => 'User not found.'], 403);
+		}
+		
+		$full_name = $dqs_user->thai_full_name;
+		
 		$menus = DB::select("
 			select b.menu_id, b.menu_name, b.app_url, b.menu_category
 			from dqs_authorization a

@@ -35,7 +35,7 @@ return [
     |
     */
 
-    'username_attribute' => ['user_name' => 'name'],
+    'username_attribute' => ['username' => 'samaccountname'],
 
     /*
     |--------------------------------------------------------------------------
@@ -198,7 +198,7 @@ return [
 
         'name' => 'cn',
 		'description' => 'description',
-		'personnel_id' => 'useraccountcontrol',
+		'personnel_id' => 'employeeid',
 		'full_name' => 'displayname',
     ],
 
