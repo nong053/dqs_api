@@ -27,6 +27,7 @@ class MenuController extends Controller
         $items = DB::select("
 			select menu_id, menu_name, app_url, menu_category
 			from dqs_menu
+			order by menu_name asc
 		");
 		return response()->json($items);
     }
