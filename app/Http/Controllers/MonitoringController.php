@@ -119,14 +119,49 @@ class MonitoringController extends Controller
 			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
 			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
 			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
-			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
-			!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
-			!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
-			!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			//!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			if ($request->death_flag == '') {
+			} else {
+				$query .= " and c.death_flag = ? ";
+				$qinput[] = $request->death_flag;
+			}
+			//!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			if ($request->personnel_flag == '') {
+			} else {
+				$query .= " and c.personnel_flag = ? ";
+				$qinput[] = $request->personnel_flag;
+			}
+			//!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			if ($request->employee_flag == '') {
+			} else {
+				$query .= " and c.employee_flag = ? ";
+				$qinput[] = $request->employee_flag;
+			}
 			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
-			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
-			!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
-			!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+			//!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			if ($request->inform_flag == '') {
+			} else {
+				$query .= " and b.inform_flag = ? ";
+				$qinput[] = $request->inform_flag;
+			}
+			//!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			if ($request->release_flag == '') {
+			} else {
+				$query .= " and b.release_flag = ? ";
+				$qinput[] = $request->release_flag;
+			}
 		
 
 			// Get all items you want
@@ -165,14 +200,49 @@ class MonitoringController extends Controller
 			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
 			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
 			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
-			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
-			!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
-			!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
-			!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			//!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			if ($request->death_flag == '') {
+			} else {
+				$query .= " and c.death_flag = ? ";
+				$qinput[] = $request->death_flag;
+			}
+			//!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			if ($request->personnel_flag == '') {
+			} else {
+				$query .= " and c.personnel_flag = ? ";
+				$qinput[] = $request->personnel_flag;
+			}
+			//!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			if ($request->employee_flag == '') {
+			} else {
+				$query .= " and c.employee_flag = ? ";
+				$qinput[] = $request->employee_flag;
+			}
 			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
-			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
-			!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
-			!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+			//!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			if ($request->inform_flag == '') {
+			} else {
+				$query .= " and b.inform_flag = ? ";
+				$qinput[] = $request->inform_flag;
+			}
+			//!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			if ($request->release_flag == '') {
+			} else {
+				$query .= " and b.release_flag = ? ";
+				$qinput[] = $request->release_flag;
+			}
 		
 
 			// Get all items you want
@@ -519,9 +589,19 @@ class MonitoringController extends Controller
 			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
 			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
 			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
-			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
 			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
-			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
 		
 
 			// Get all items you want
@@ -558,9 +638,19 @@ class MonitoringController extends Controller
 			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
 			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
 			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
-			!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
 			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
-			!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag) {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
 		
 
 			// Get all items you want
