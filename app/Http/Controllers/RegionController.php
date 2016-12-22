@@ -28,7 +28,7 @@ class RegionController extends Controller
     {
 		if (empty($request->search_all)) {
 			$query ="			
-				select a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
+				select distinct a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
 				from dqs_region a
 				left outer join dqs_branch b
 				on a.region_code = b.region
@@ -41,7 +41,7 @@ class RegionController extends Controller
 			$q = "%" . $request->search_all . "%";
 		//	$qflag = $request->search_all;
 			$items = DB::select("
-				select a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
+				select distinct a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
 				from dqs_region a
 				left outer join dqs_branch b
 				on a.region_code = b.region
