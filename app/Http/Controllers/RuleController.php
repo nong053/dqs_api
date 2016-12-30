@@ -36,9 +36,24 @@ class RuleController extends Controller
 			
 			empty($request->rule_group) ?: ($query .= " and a.rule_group like ? " AND $qinput[] = "%" . $request->rule_group . "%");
 			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
-			!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
-			!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
-			!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);			
+			//!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
+			if ($request->initial_flag == '') {
+			} else {
+				$query .= " and a.initial_flag = ? ";
+				$qinput[] = $request->initial_flag;
+			}
+			//!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
+			if ($request->update_flag == '') {
+			} else {
+				$query .= " and a.update_flag = ? ";
+				$qinput[] = $request->update_flag;
+			}
+			//!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);		
+			if ($request->last_contact_flag == '') {
+			} else {
+				$query .= " and a.last_contact_flag = ? ";
+				$qinput[] = $request->last_contact_flag;
+			}
 
 			// Get all items you want
 			$items = DB::select($query, $qinput);
@@ -215,7 +230,7 @@ class RuleController extends Controller
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Rule is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'ไม่สามารถลบข้อมูลได้ เนื่องจากมีการใช้งานอยู่']);
 			} else {
 				return response()->json($e);
 			}

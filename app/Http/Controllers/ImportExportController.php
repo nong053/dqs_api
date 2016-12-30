@@ -58,8 +58,8 @@ class ImportExportController extends Controller
 				where 1 = 1
 			";		
 			$qinput = array();
-			empty($request->cust_type) ?: ($query .= " and type = ? " AND $qinput[] = $request->cust_type);
-			empty($request->year) ?: ($query .= " and substring(dao,1,4) = ? " AND $qinput[] = $request->year);
+			empty($request->cust_type) ?: ($query .= " and zktbccode = ? " AND $qinput[] = $request->cust_type);
+			empty($request->year) ?: ($query .= " and datepart(yyyy, dao) = ? " AND $qinput[] = $request->year);
 			$items = DB::select($query, $qinput);
 
 		} else {
@@ -69,14 +69,18 @@ class ImportExportController extends Controller
 				where citizen_export_flag = 0 
 			";		
 			$qinput = array();
-			empty($request->cust_type) ?: ($query .= " and type = ? " AND $qinput[] = $request->cust_type);		
+			empty($request->cust_type) ?: ($query .= " and zktbccode = ? " AND $qinput[] = $request->cust_type);		
 			$items = DB::select($query, $qinput);
 		}
-		
+
 		$page = 1;
 		$perPage = $limit;
 		$offSet = ($page * $perPage) - $perPage;
-		$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);		
+		$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);	
+		
+		if (empty($items)) {
+			return 'No matching record found';
+		}
 		
 		while (!empty($itemsForCurrentPage)) {
 			$filename = $filenamemaster . "_" . str_pad($filecount,2,"0",STR_PAD_LEFT);
@@ -86,16 +90,16 @@ class ImportExportController extends Controller
 					$sheet->appendRow(array('REFNO', 'PID', 'FNAME', 'LNAME', 'DOB', 'SEX'));
 					foreach ($itemsForCurrentPage as $i) {
 						$sheet->appendRow(array(
-							iconv("UTF-8", "Windows-1252", $i->REFNO), 
-							iconv("UTF-8", "Windows-1252", $i->PID), 
-							iconv("UTF-8", "Windows-1252", $i->FNAME), 
-							iconv("UTF-8", "Windows-1252", $i->LNAME), 
-							iconv("UTF-8", "Windows-1252", $i->DOB), 
-							iconv("UTF-8", "Windows-1252", $i->SEX)
+							$i->REFNO, //iconv("UTF-8", "Windows-1252", $i->REFNO), 
+							$i->PID, //iconv("UTF-8", "Windows-1252", $i->PID), 
+							$i->FNAME, //iconv("UTF-8", "Windows-1252", $i->FNAME), 
+							$i->LNAME, //iconv("UTF-8", "Windows-1252", $i->LNAME), 
+							$i->DOB, //iconv("UTF-8", "Windows-1252", $i->DOB), 
+							$i->SEX //iconv("UTF-8", "Windows-1252", $i->SEX)
 							));
 					}
 				});
-
+			//})->export('xls');
 			})->store('xls',$outpath);	
 			$filecount += 1;
 			$page += 1;
@@ -103,6 +107,7 @@ class ImportExportController extends Controller
 			$offSet = ($page * $perPage) - $perPage;
 			$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);			
 		}
+		
 		$clearold = exec('del "'.$outpath . $filenamemaster . '.zip"');
 		$result = exec('"C:\\Program Files (x86)\\7-Zip\\7z.exe" a -tzip -sdel "' . $outpath . $filenamemaster . '.zip" "' . $outpath . 'N*.xls"');
 		
@@ -145,45 +150,59 @@ class ImportExportController extends Controller
 				$f->move($importpath,$f->getClientOriginalName());				
 				$readcount = 0;
 				$insertcount = 0;
-				foreach(file($importpath.$f->getClientOriginalName()) as $line) {
-					$item = explode('|',$line);
-					$readcount += 1;
-					$cz = new CitizenImport;
-					$cz->ref_no = $item[0];
-					$cz->pid = $item[3];
-					$cz->fname = $item[1];
-					$cz->lname = $item[2];
-					$cz->dob = 0;
-					$cz->sex = 0;
-					$cz->npid = 0;
-					$cz->ntitle = 0;
-					$cz->nfname = 0;
-					$cz->nlname = 0;
-					$cz->ndob = 0;
-					$cz->nsex = 0;
-					$cz->hno = 0;
-					$cz->moo = 0;
-					$cz->trok = 0;
-					$cz->soi = 0;
-					$cz->thanon = 0;
-					$cz->thumbol = 0;
-					$cz->amphur = 0;
-					$cz->province = 0;
-					$cz->flag = 0;
-					$cz->flag_1 = 0;
-					$cz->thai_flag = 0;
-					$cz->manual_add_flag = 0;
-					$cz->created_by = Auth::user()->personnel_id;
-					$cz->updated_by = Auth::user()->personnel_id;
-					try {
-						$cz->save();
-						$insertcount += 1;
-					} catch (QueryException $e) {
-					}
-					
-					Customer::where("acn",$item[0])->update(['citizen_import_flag' => 1, 'citizen_import_date' => date('Ymd H:i:s')]);
-					
-				}				
+				set_time_limit(300);
+				$filelocation = $importpath.$f->getClientOriginalName();
+				$filetxt = file($filelocation);
+				$readcount = 0;
+				$insertcount = 0;
+				$commitcount = 0;
+			//	DB::transaction(function ($filetxt) use ($filetxt){	
+					foreach($filetxt as $l) {
+						//$item = explode('|',$line);
+
+						$readcount += 1;
+
+						//$line = iconv("tis-620", "utf-8", $l);
+						$cz = new CitizenImport;
+						$cz->ref_no = trim(substr($l,0,11));
+						$cz->pid = trim(substr($l,11,13));
+						$cz->fname = iconv("tis-620", "utf-8", trim(substr($l,24,30)));
+						$cz->lname = iconv("tis-620", "utf-8", trim(substr($l,54,30)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,84,8)))) ? $cz->dob = null : $cz->dob = iconv("tis-620", "utf-8", trim(substr($l,84,8)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,92,1)))) ? $cz->sex = null : $cz->sex = iconv("tis-620", "utf-8", trim(substr($l,92,1)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,93,13)))) ? $cz->npid = null : $cz->npid = iconv("tis-620", "utf-8", trim(substr($l,93,13)));
+						$cz->ntitle = iconv("tis-620", "utf-8", trim(substr($l,106,30)));
+						$cz->nfname = iconv("tis-620", "utf-8", trim(substr($l,136,30)));
+						$cz->nlname = iconv("tis-620", "utf-8", trim(substr($l,166,30)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,196,8)))) ? $cz->ndob = null : $cz->ndob = iconv("tis-620", "utf-8", trim(substr($l,196,8)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,204,1)))) ? $cz->nsex = null : $cz->nsex = iconv("tis-620", "utf-8", trim(substr($l,204,1)));
+						$cz->hno = iconv("tis-620", "utf-8", trim(substr($l,205,16)));
+						$cz->moo = iconv("tis-620", "utf-8", trim(substr($l,221,6)));
+						$cz->trok = iconv("tis-620", "utf-8", trim(substr($l,227,40)));
+						$cz->soi = iconv("tis-620", "utf-8", trim(substr($l,267,40)));
+						$cz->thanon = iconv("tis-620", "utf-8", trim(substr($l,307,40)));
+						$cz->thumbol = iconv("tis-620", "utf-8", trim(substr($l,347,40)));
+						$cz->amphur = iconv("tis-620", "utf-8", trim(substr($l,387,40)));
+						$cz->province = iconv("tis-620", "utf-8", trim(substr($l,427,40)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,467,2)))) ? $cz->flag = null : $cz->flag = iconv("tis-620", "utf-8", trim(substr($l,467,2)));
+						empty(iconv("tis-620", "utf-8", trim(substr($l,469,2)))) ? $cz->flag_1 : $cz->flag_1 = iconv("tis-620", "utf-8", trim(substr($l,469,2)));
+						$cz->thai_flag = 1;
+						$cz->manual_add_flag = 0;
+						$cz->created_by = Auth::user()->personnel_id;
+						$cz->updated_by = Auth::user()->personnel_id;
+						try {
+							$cz->save();
+							$insertcount += 1;
+						} catch (QueryException $e) {
+							return $e;
+						}
+						try {
+						Customer::where("acn",trim(substr($l,0,11)))->update(['citizen_import_flag' => 1, 'citizen_import_date' => date('Ymd H:i:s')]);
+						} catch (QueryException $e) {
+							return ['line' => $l, 'ref_no' => trim(substr($l,0,11)), 'error' => $e];
+						}
+					}	
+		//		});
 				rename($importpath.$f->getClientOriginalName(), $importpath."archive/".$f->getClientOriginalName());
 				$successes[] = [
 					"filename" => $f->getClientOriginalName()
@@ -239,7 +258,8 @@ class ImportExportController extends Controller
 			try {
 				$items = DB::select($query);			
 			} catch (QueryException $e) {
-				return response()->json(['status' => 400, 'data' => 'There is an error in query syntax.']);
+				//return response()->json(['status' => 400, 'data' => 'There is an error in query syntax.']);
+				return 'There is an error in your query syntax.';
 			}
 		}
 		
@@ -247,6 +267,10 @@ class ImportExportController extends Controller
 		$perPage = $limit;
 		$offSet = ($page * $perPage) - $perPage;
 		$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);		
+		
+		if (empty($items)) {
+			return 'No matching record found';
+		}		
 		
 		while (!empty($itemsForCurrentPage)) {
 			$filename = $filenamemaster . "_" . str_pad($filecount,2,"0",STR_PAD_LEFT);
@@ -256,14 +280,15 @@ class ImportExportController extends Controller
 					$sheet->appendRow(array('ACN', 'XNAME', 'APH'));
 					foreach ($itemsForCurrentPage as $i) {
 						$sheet->appendRow(array(
-							iconv("UTF-8", "Windows-1252", $i->ACN), 
-							iconv("UTF-8", "Windows-1252", $i->XNAME), 
-							iconv("UTF-8", "Windows-1252", $i->APH)
+							$i->ACN, //iconv("UTF-8", "Windows-1252", $i->ACN), 
+							$i->XNAME, //iconv("UTF-8", "Windows-1252", $i->XNAME), 
+							$i->APH //iconv("UTF-8", "Windows-1252", $i->APH)
 							));
 					}
 				});
 
 			})->store('xls',$outpath);	
+			//})->export('xls');
 			$filecount += 1;
 			$page += 1;
 			$perPage = $limit;

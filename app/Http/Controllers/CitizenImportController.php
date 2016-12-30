@@ -98,7 +98,7 @@ class CitizenImportController extends Controller
 			'sex' => 'required|numeric|digits_between:1,1',
 			'ntitle' => 'required|max:30',
 			'hno' => 'required|max:16',
-			'moo' => 'numeric|digits_between:1,6',
+			'moo' => 'max:6',
 			'trok' => 'max:40',
 			'soi' => 'max:40',
 			'thanon' => 'max:40',
@@ -148,7 +148,7 @@ class CitizenImportController extends Controller
 				'sex' => 'required|numeric|digits_between:1,1',
 				'ntitle' => 'required|max:30',
 				'hno' => 'required|max:16',
-				'moo' => 'numeric|digits_between:1,6',
+				'moo' => 'max:6',
 				'trok' => 'max:40',
 				'soi' => 'max:40',
 				'thanon' => 'max:40',
@@ -216,7 +216,7 @@ class CitizenImportController extends Controller
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Citizen is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'ไม่สามารถลบข้อมูลได้ เนื่องจากมีการใช้งานอยู่']);
 			} else {
 				return response()->json($e);
 			}

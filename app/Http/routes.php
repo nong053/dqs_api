@@ -15,6 +15,7 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 	header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']);
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
 	header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, useXDomain, withCredentials');
+	header('Keep-Alive: timeout=10, max=100');
 }
 // Route::get('/', function () {
     // return Response::json(array('hello' => 'hehe'));
@@ -26,6 +27,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Session //
 	Route::get('session','AuthenticateController@index');
 	Route::post('session', 'AuthenticateController@authenticate');
+	Route::post('session/log', 'AuthenticateController@usage_log');
 	Route::delete('session', 'AuthenticateController@destroy');
 	
 	// Branch //
@@ -106,11 +108,13 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_monitoring/cust_type', 'MonitoringController@list_cust_type');
 	Route::get('dqs_monitoring/branch_list', 'MonitoringController@list_branch');
 	Route::get('dqs_monitoring/rule', 'MonitoringController@list_rule');
+	Route::post('dqs_monitoring/cdmd/export', 'MonitoringController@cdmd_export');		// add to doc
 	Route::get('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}', 'MonitoringController@cdmd_update');
 	Route::get('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_explain_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_update_explain');
 	Route::get('dqs_monitoring/cdmd', 'MonitoringController@cdmd_index');
+	Route::get('dqs_monitoring/branch/export', 'MonitoringController@branch_export');		// add to doc
 	Route::patch('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_update');
 	Route::get('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_details');
 	Route::get('dqs_monitoring/branch/{header_id}/explain', 'MonitoringController@branch_explain_details');
@@ -122,10 +126,25 @@ Route::group(['middleware' => 'cors'], function()
 	// Maintenance //
 	Route::get('dqs_maintenance/contact_type', 'MaintenanceController@contact_type');
 	Route::get('dqs_maintenance/import_log', 'MaintenanceController@import_log');
+	Route::post('dqs_maintenance/import_log/export', 'MaintenanceController@export_import_log');
 	Route::get('dqs_maintenance/reject_log', 'MaintenanceController@reject_log');
+	Route::post('dqs_maintenance/reject_log/export', 'MaintenanceController@export_reject_log');
 	Route::get('dqs_maintenance/usage_log', 'MaintenanceController@usage_log');
+	Route::post('dqs_maintenance/usage_log/export', 'MaintenanceController@export_usage_log');
 	Route::post('dqs_maintenance/personnel_name', 'MaintenanceController@auto_personnel_name');
-
+	
+	// Operation Report//
+	Route::get('dqs_operation_report/no_progress', 'OperationReportController@no_progress');
+	Route::post('dqs_operation_report/no_progress/export', 'OperationReportController@no_progress_export');
+	Route::get('dqs_operation_report/progressed', 'OperationReportController@progressed');
+	Route::post('dqs_operation_report/progressed/export', 'OperationReportController@progressed_export');
+	Route::get('dqs_operation_report/customer', 'OperationReportController@customer');	
+	Route::post('dqs_operation_report/customer/export', 'OperationReportController@customer_export');	
+	Route::get('dqs_operation_report/overdue_kpi', 'OperationReportController@overdue_kpi');	
+	Route::post('dqs_operation_report/overdue_kpi/export', 'OperationReportController@overdue_kpi_export');	
+	Route::get('dqs_operation_report/merge_cif', 'OperationReportController@merge_cif');
+	Route::post('dqs_operation_report/merge_cif/export', 'OperationReportController@merge_cif_export');
+	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);
 	}]);

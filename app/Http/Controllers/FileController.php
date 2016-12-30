@@ -25,9 +25,9 @@ class FileController extends Controller
     {
 		if (empty($request->search_all)) {
 			$query = "			
-				select file_id, processing_seq, file_name, source_file_path, target_file_path, contact_type, kpi_flag, last_contact_flag, source_file_delete_flag, nof_date_delete
+				select file_id, case processing_seq when 0 then null else processing_seq end as processing_seq, file_name, source_file_path, target_file_path, contact_type, kpi_flag, last_contact_flag, source_file_delete_flag, nof_date_delete
 				from dqs_file
-				order by processing_seq asc
+				order by case processing_seq when 0 then 9999 else processing_seq end asc
 			";					
 
 			// Get all items you want
@@ -129,7 +129,6 @@ class FileController extends Controller
 				$errors[] = ["file_id" => $f["file_id"]];
 			} else {
 				$validator = Validator::make($f, [
-					'processing_seq' => 'required|integer',
 					'contact_type' => 'required|max:255',
 					'kpi_flag' => 'required|boolean',
 					'last_contact_flag' => 'required|boolean',

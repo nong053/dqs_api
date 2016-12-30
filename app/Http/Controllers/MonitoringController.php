@@ -14,6 +14,7 @@ use DB;
 use Validator;
 use Auth;
 use File;
+use Excel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -30,10 +31,24 @@ class MonitoringController extends Controller
    
 	public function list_branch()
 	{
-		$items = DB::select("
-			select brcd, [desc]
-			from dqs_branch
-		"); // to be filtered by role
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		if ($role->all_branch_flag == '1') {
+			$items = DB::select("
+				select brcd, [desc]
+				from dqs_branch
+			");
+		} else {
+			$items = DB::select("
+				select brcd, [desc]
+				from dqs_branch
+				where brcd = ?
+			", array($user->branch_code));		
+		}
 		return response()->json($items);
 	}
 	
@@ -85,9 +100,16 @@ class MonitoringController extends Controller
 		// group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
 		// order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc	
 		
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+				
 		if ($request->process_type == 'Initial') {
 			$query = "			
-				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, a.kpi_flag, a.complete_flag,
+				count(b.initial_validate_id) rules 
 				from dqs_initial_validate_header a
 				left outer join dqs_initial_validate b
 				on a.validate_initial_header_id = b.validate_initial_header_id
@@ -97,13 +119,18 @@ class MonitoringController extends Controller
 			";
 					
 			$qfooter = "
-				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
 				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
 			";
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			if ($role->all_branch_flag == '1') {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code = ? ";
+				$qinput[] = $user->branch_code;
+			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
@@ -168,7 +195,8 @@ class MonitoringController extends Controller
 			$items = DB::select($query . $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, a.kpi_flag, a.complete_flag,
+				count(b.validate_id) rules 
 				from dqs_validate_header a
 				left outer join dqs_validate b
 				on a.validate_header_id = b.validate_header_id
@@ -178,13 +206,18 @@ class MonitoringController extends Controller
 			";
 					
 			$qfooter = "
-				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
 				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
 			";
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			if ($role->all_branch_flag == '1') {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code = ? ";
+				$qinput[] = $user->branch_code;
+			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
@@ -260,13 +293,222 @@ class MonitoringController extends Controller
 
 		// Get only the items you need using array_slice (only get 10 items since that's what you need)
 		$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);
-
 		// Return the paginator with only 10 items but with the count of all items and set the it on the correct page
 		$result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page);			
 
 
 		return response()->json($result);
     }
+	
+	public function cdmd_export(Request $request)
+	{
+				
+		if ($request->process_type == 'Initial') {
+			$query = "			
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, 
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
+				count(d.explain_file_id) is_attached
+				from dqs_initial_validate_header a
+				left outer join dqs_initial_validate b
+				on a.validate_initial_header_id = b.validate_initial_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				left outer join dqs_explain_file d
+				on a.validate_initial_header_id = d.validate_initial_header_id
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), 
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+			";
+						
+			$qinput = array();
+			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_full_name) ?: ($query .= " and a.cust_full_name = ? " AND $qinput[] = $request->cust_full_name);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			//!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			if ($request->death_flag == '') {
+			} else {
+				$query .= " and c.death_flag = ? ";
+				$qinput[] = $request->death_flag;
+			}
+			//!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			if ($request->personnel_flag == '') {
+			} else {
+				$query .= " and c.personnel_flag = ? ";
+				$qinput[] = $request->personnel_flag;
+			}
+			//!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			if ($request->employee_flag == '') {
+			} else {
+				$query .= " and c.employee_flag = ? ";
+				$qinput[] = $request->employee_flag;
+			}
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+			//!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			if ($request->inform_flag == '') {
+			} else {
+				$query .= " and b.inform_flag = ? ";
+				$qinput[] = $request->inform_flag;
+			}
+			//!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			if ($request->release_flag == '') {
+			} else {
+				$query .= " and b.release_flag = ? ";
+				$qinput[] = $request->release_flag;
+			}
+		
+
+			// Get all items you want
+			$items = DB::select($query . $qfooter, $qinput);		
+		} else {
+			$query = "			
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, 
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
+				count(d.explain_file_id) is_attached
+				from dqs_validate_header a
+				left outer join dqs_validate b
+				on a.validate_header_id = b.validate_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				left outer join dqs_explain_file d
+				on a.validate_header_id = d.validate_header_id
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), 
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+			";
+						
+			$qinput = array();
+			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_full_name) ?: ($query .= " and a.cust_full_name = ? " AND $qinput[] = $request->cust_full_name);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->risk) ?: ($query .= " and a.risk = ? " AND $qinput[] = $request->risk);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			//!isset($request->death_flag) ?: ($query .= " and c.death_flag = ? " AND $qinput[] = $request->death_flag);
+			if ($request->death_flag == '') {
+			} else {
+				$query .= " and c.death_flag = ? ";
+				$qinput[] = $request->death_flag;
+			}
+			//!isset($request->personnel_flag) ?: ($query .= " and c.personnel_flag = ? " AND $qinput[] = $request->personnel_flag);
+			if ($request->personnel_flag == '') {
+			} else {
+				$query .= " and c.personnel_flag = ? ";
+				$qinput[] = $request->personnel_flag;
+			}
+			//!isset($request->employee_flag) ?: ($query .= " and c.employee_flag = ? " AND $qinput[] = $request->employee_flag);
+			if ($request->employee_flag == '') {
+			} else {
+				$query .= " and c.employee_flag = ? ";
+				$qinput[] = $request->employee_flag;
+			}
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+			//!isset($request->inform_flag) ?: ($query .= " and b.inform_flag = ? " AND $qinput[] = $request->inform_flag);
+			if ($request->inform_flag == '') {
+			} else {
+				$query .= " and b.inform_flag = ? ";
+				$qinput[] = $request->inform_flag;
+			}
+			//!isset($request->release_flag) ?: ($query .= " and b.release_flag = ? " AND $qinput[] = $request->release_flag);
+			if ($request->release_flag == '') {
+			} else {
+				$query .= " and b.release_flag = ? ";
+				$qinput[] = $request->release_flag;
+			}
+		
+
+			// Get all items you want
+			$items = DB::select($query . $qfooter, $qinput);
+		}
+
+		$filename = "CDMD_Monitoring_" . date('dm') .  substr(date('Y') + 543,2,2);
+		$x = Excel::create($filename, function($excel) use($items, $filename) {
+			$excel->sheet($filename, function($sheet) use($items) {
+				
+				$sheet->appendRow(array('Seq No', 'CIF No', 'Customer Name', 'Customer Flag', 'Death Flag', 'Customer Type', 'Affiliation Flag', 'Last Contact Branch', 'Last Contact Date', 'Last Contact Type', 'Rule Group', 'Rule', 'Validate Status', 'Is Attached', 'Explain Status', '#Days', 'Risk'));
+				$seq = 1;
+		
+				foreach ($items as $i) {
+					$sheet->appendRow(array(
+						$seq, 
+						$i->cif_no, 
+						$i->cust_full_name, 
+						$i->customer_flag, 
+						$i->death_flag, 
+						$i->type,
+						$i->affiliation_flag,
+						$i->contact_branch_name,
+						$i->contact_type,
+						$i->rule_group,
+						$i->rule_name,
+						$i->validate_status,
+						$i->is_attached,
+						$i->explain_status,
+						$i->days,
+						$i->risk
+						));
+					$seq += 1;
+				}
+			});
+
+		})->export('xls');				
+	}
 	
 	public function cdmd_details(Request $request, $header_id)
 	{
@@ -278,7 +520,7 @@ class MonitoringController extends Controller
 				left outer join dqs_initial_validate b
 				on a.validate_initial_header_id = b.validate_initial_header_id
 				where a.validate_initial_header_id = ?
-				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays				
+				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)				
 			", array($header_id));
 			$header = $query[0];
 			
@@ -303,7 +545,7 @@ class MonitoringController extends Controller
 			// Return the paginator with only 10 items but with the count of all items and set the it on the correct page
 			$result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page);		
 			$header->rule_list = $result;
-			return response()->json($header);
+			return ['header' => $header, 'rule_list' => $result->toArray()];
 			
 		} else {
 			$query = DB::select("
@@ -557,9 +799,16 @@ class MonitoringController extends Controller
 		// group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
 		// order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc	
 		
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
 		if ($request->process_type == 'Initial') {
 			$query = "			
-				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, a.kpi_flag, a.complete_flag, 
+				count(b.initial_validate_id) rules 
 				from dqs_initial_validate_header a
 				left outer join dqs_initial_validate b
 				on a.validate_initial_header_id = b.validate_initial_header_id
@@ -569,14 +818,19 @@ class MonitoringController extends Controller
 			";
 					
 			$qfooter = "
-				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
 				order by maxdays desc, rules desc, cif_no asc
 			";
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
-				
+			if ($role->all_branch_flag == 1) {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code = ? ";
+				$qinput[] = $user->branch_code;
+			}
+			
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
 					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
@@ -608,7 +862,8 @@ class MonitoringController extends Controller
 			$items = DB::select($query . $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, count(b.validate_id) rules 
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays, a.kpi_flag, a.complete_flag, 
+				count(b.validate_id) rules 
 				from dqs_validate_header a
 				left outer join dqs_validate b
 				on a.validate_header_id = b.validate_header_id
@@ -618,13 +873,18 @@ class MonitoringController extends Controller
 			";
 					
 			$qfooter = "
-				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)
+				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
 				order by maxdays desc, rules desc, cif_no asc
 			";
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			if ($role->all_branch_flag == 1) {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code = ? ";
+				$qinput[] = $user->branch_code;
+			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
@@ -676,6 +936,150 @@ class MonitoringController extends Controller
 		return response()->json($result);
     }	
 	
+	public function branch_export(Request $request)
+	{
+		if ($request->process_type == 'Initial') {
+			$query = "			
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
+				count(d.explain_file_id) is_attached
+				from dqs_initial_validate_header a
+				left outer join dqs_initial_validate b
+				on a.validate_initial_header_id = b.validate_initial_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				left outer join dqs_explain_file d
+				on a.validate_initial_header_id = d.validate_initial_header_id
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
+				order by maxdays desc, rules desc, cif_no asc
+			";
+						
+			$qinput = array();
+			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag == '') {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+		
+
+			// Get all items you want
+			$items = DB::select($query . $qfooter, $qinput);		
+		} else {
+			$query = "			
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name rules, b.validate_status, a.risk, 
+				count(d.explain_file_id) is_attached
+				from dqs_validate_header a
+				left outer join dqs_validate b
+				on a.validate_header_id = b.validate_header_id
+				left outer join dqs_cust c
+				on a.cif_no = c.acn
+				left outer join dqs_explain_file d
+				on a.validate_header_id = d.validate_header_id
+				where 1 = 1
+			";
+					
+			$qfooter = "
+				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
+				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
+				order by maxdays desc, rules desc, cif_no asc
+			";
+						
+			$qinput = array();
+			
+			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+				
+				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
+				} else {
+					$query .= " and a.validate_date between cast(? as date) and cast(? as date) ";
+					$qinput[] = $request->start_validate_date;
+					$qinput[] = $request->end_validate_date;				
+				}
+				
+			empty($request->cif_no) ?: ($query .= " and a.cif_no = ? " AND $qinput[] = $request->cif_no);
+			empty($request->cust_type_code) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type_code);
+			empty($request->rule_group) ?: ($query .= " and b.rule_group = ? " AND $qinput[] = $request->rule_group);
+			empty($request->rule_id) ?: ($query .= " and b.rule_id = ? " AND $qinput[] = $request->rule_id);
+			empty($request->validate_status) ?: ($query .= " and b.validate_status = ? " AND $qinput[] = $request->validate_status);
+			//!isset($request->customer_flag) ?: ($query .= " and c.customer_flag = ? " AND $qinput[] = $request->customer_flag);
+			if ($request->customer_flag == '') {
+			} else {
+				$query .= " and c.customer_flag = ? ";
+				$qinput[] = $request->customer_flag;
+			}
+			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
+			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
+			if ($request->affiliation_flag) {
+			} else {
+				$query .= " and c.affiliation_flag = ? ";
+				$qinput[] = $request->affiliation_flag;
+			}
+		
+
+			// Get all items you want
+			$items = DB::select($query . $qfooter, $qinput);
+		}	
+		$filename = "CDMD_Branch_" . date('dm') .  substr(date('Y') + 543,2,2);
+		$x = Excel::create($filename, function($excel) use($items, $filename) {
+			$excel->sheet($filename, function($sheet) use($items) {
+				
+				$sheet->appendRow(array('Seq No', 'CIF No', 'Customer Name', 'Customer Flag', 'Death Flag', 'Customer Type', 'Affiliation Flag', 'Last Contact Branch', 'Last Contact Date', 'Last Contact Type', 'Rule Group', 'Rule', 'Validate Status', 'Is Attached', 'Explain Status', '#Days', 'Risk'));
+				$seq = 1;
+		
+				foreach ($items as $i) {
+					$sheet->appendRow(array(
+						$seq, 
+						$i->cif_no, 
+						$i->cust_full_name, 
+						$i->customer_flag, 
+						$i->death_flag, 
+						$i->type,
+						$i->affiliation_flag,
+						$i->contact_branch_name,
+						$i->contact_type,
+						$i->rule_group,
+						$i->rule_name,
+						$i->validate_status,
+						$i->is_attached,
+						$i->explain_status,
+						$i->days,
+						$i->risk
+						));
+					$seq += 1;
+				}
+			});
+
+		})->export('xls');				
+	}
+	
 	public function branch_details(Request $request, $header_id)
 	{
 		if ($request->process_type == 'Initial') {
@@ -686,7 +1090,7 @@ class MonitoringController extends Controller
 				left outer join dqs_initial_validate b
 				on a.validate_initial_header_id = b.validate_initial_header_id
 				where a.validate_initial_header_id = ?
-				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays				
+				group by a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date)				
 			", array($header_id));
 			$header = $query[0];
 			
@@ -711,7 +1115,7 @@ class MonitoringController extends Controller
 			// Return the paginator with only 10 items but with the count of all items and set the it on the correct page
 			$result = new LengthAwarePaginator($itemsForCurrentPage, count($items), $perPage, $page);		
 			$header->rule_list = $result;
-			return response()->json($header);
+			return response()->json(['header' => $header, 'rule_list' => $result->toArray()]);
 			
 		} else {
 			$query = DB::select("

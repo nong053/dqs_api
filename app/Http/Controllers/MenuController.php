@@ -161,7 +161,7 @@ class MenuController extends Controller
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please remove this Menu from Authorization first.']);
+				return response()->json(['status' => 400, 'data' => 'ไม่สามารถลบข้อมูลได้ เนื่องจากมีการใช้งานอยู่']);
 			} else {
 				return response()->json($e);
 			}

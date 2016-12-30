@@ -44,7 +44,7 @@ class BranchOperationController extends Controller
 	public function store(Request $request)
 	{
         $validator = Validator::make($request->all(), [
-            'operation_name' => 'required|max:255',
+            'operation_name' => 'required|unique:dqs_branch_operation|max:255',
 			'cost_center' => 'required|numeric|digits_between:1,18'
         ]);
 
@@ -71,7 +71,7 @@ class BranchOperationController extends Controller
 		}
 		
         $validator = Validator::make($request->all(), [
-            'operation_name' => 'required|max:255',
+            'operation_name' => 'required|max:255|unique:dqs_branch_operation,operation_name,' . $operation_id . ',operation_id',
 			'cost_center' => 'required|numeric|digits_between:1,18'
         ]);
 
@@ -99,7 +99,7 @@ class BranchOperationController extends Controller
 			$item->delete();
 		} catch (QueryException $e) {
 			if ($e->errorInfo[1] == 547) {
-				return response()->json(['status' => 400, 'data' => 'Foreign key conflict error. Please ensure that this Branch Operation is not referenced in another module.']);
+				return response()->json(['status' => 400, 'data' => 'ไม่สามารถลบข้อมูลได้ เนื่องจากมีการใช้งานอยู่']);
 			} else {
 				return response()->json($e);
 			}

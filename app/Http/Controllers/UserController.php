@@ -220,9 +220,9 @@ class UserController extends Controller
 	
 	public function list_revised_cost_center()
 	{
-		// to remove top 10 later
+		# remove limit 10 later
 		$items = DB::select('
-			select distinct top 10 ccdef, dqs_branch.[desc]
+			select distinct ccdef, dqs_branch.[desc]
 			from dqs_branch
 		');
 		return response()->json($items);
