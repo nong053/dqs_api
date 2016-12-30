@@ -628,6 +628,12 @@ class MonitoringController extends Controller
 	
 	public function cdmd_update_explain(Request $request, $header_id)
 	{
+		$checkuser = DQSUser::find(Auth::user()->personnel_id);
+		$checkrole = DQSRole::find($checkuser->role_id);
+		if (empty($checkrole)) {
+			return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+		}	
+		
 		if ($request->process_type == 'Initial') {
 			$header = DB::select("
 				select validate_initial_header_id
@@ -647,10 +653,6 @@ class MonitoringController extends Controller
 			} else {
 				$item = DQSInitialValidateHeader::find($header_id);
 				$item->explain_remark = $request->explain_remark;
-				$checkrole = DQSRole::find(Auth::user()->role_id);
-				if (empty($checkrole)) {
-					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
-				}
 				
 				if ($request->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
 					$item->explain_status = $request->explain_status;
@@ -681,11 +683,6 @@ class MonitoringController extends Controller
 			} else {
 				$item = DQSValidateHeader::find($header_id);
 				$item->explain_remark = $request->explain_remark;
-				$checkuser = DQSUser::find(Auth::user()->personnel_id);
-				$checkrole = DQSRole::find($checkuser->role_id);
-				if (empty($checkrole)) {
-					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
-				}
 				
 				if ($item->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
 					$item->explain_status = $request->explain_status;
@@ -1198,6 +1195,15 @@ class MonitoringController extends Controller
 	
 	public function branch_update_explain(Request $request, $header_id)
 	{
+	
+		$checkuser = DQSUser::find(Auth::user()->personnel_id);
+		$checkrole = DQSRole::find($checkuser->role_id);	
+		
+		if (empty($checkrole)) {
+			return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
+		}		
+				
+		
 		if ($request->process_type == 'Initial') {
 			$header = DB::select("
 				select validate_initial_header_id
@@ -1215,12 +1221,6 @@ class MonitoringController extends Controller
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
 				$item = DQSInitialValidateHeader::find($header_id);
-				
-				$checkrole = DQSRole::find(Auth::user()->role_id);
-				if (empty($checkrole)) {
-					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
-				}
-				
 				if ($checkrole->authority_flag == 1) {
 					$item->explain_remark = $request->explain_remark;				
 				} else {
@@ -1246,13 +1246,6 @@ class MonitoringController extends Controller
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
 			} else {
 				$item = DQSValidateHeader::find($header_id);
-				
-				$checkuser = DQSUser::find(Auth::user()->personnel_id);
-				$checkrole = DQSRole::find($checkuser->role_id);
-				if (empty($checkrole)) {
-					return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
-				}
-				
 				if ($checkrole->authority_flag == 1) {
 					$item->explain_remark = $request->explain_remark;
 				} else {
