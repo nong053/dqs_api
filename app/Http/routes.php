@@ -87,6 +87,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::resource('dqs_region', 'RegionController');	
 	
 	// Grade //
+	Route::get('dqs_grade/rule_list', 'GradeController@list_rule');
 	Route::get('dqs_grade/{grade_id}/condition', 'GradeController@list_condition');
 	Route::post('dqs_grade/{grade_id}/condition', 'GradeController@add_condition');
 	Route::patch('dqs_grade/{grade_id}/condition/{condition_id}', 'GradeController@update_condition');
@@ -134,6 +135,13 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dqs_maintenance/personnel_name', 'MaintenanceController@auto_personnel_name');
 	
 	// Operation Report//
+	Route::get('dqs_operation_report/province_list', 'OperationReportController@list_province');
+	Route::post('dqs_operation_report/auto_name', 'OperationReportController@auto_name');
+	Route::post('dqs_operation_report/auto_surname', 'OperationReportController@auto_surname');
+	Route::get('dqs_operation_report/operation_list', 'OperationReportController@list_operation');
+	Route::get('dqs_operation_report/region_list', 'OperationReportController@list_region');
+	Route::get('dqs_operation_report/district_list', 'OperationReportController@list_district');
+	Route::get('dqs_operation_report/branch_list', 'OperationReportController@list_branch');
 	Route::get('dqs_operation_report/no_progress', 'OperationReportController@no_progress');
 	Route::post('dqs_operation_report/no_progress/export', 'OperationReportController@no_progress_export');
 	Route::get('dqs_operation_report/progressed', 'OperationReportController@progressed');
@@ -144,6 +152,8 @@ Route::group(['middleware' => 'cors'], function()
 	Route::post('dqs_operation_report/overdue_kpi/export', 'OperationReportController@overdue_kpi_export');	
 	Route::get('dqs_operation_report/merge_cif', 'OperationReportController@merge_cif');
 	Route::post('dqs_operation_report/merge_cif/export', 'OperationReportController@merge_cif_export');
+	Route::get('dqs_operation_report/kpi_result', 'OperationReportController@kpi_result');
+	Route::post('dqs_operation_report/kpi_result/export', 'OperationReportController@kpi_result_export');	
 	
 	Route::get('404', ['as' => 'notfound', function () {
 		return response()->json(['status' => '404']);

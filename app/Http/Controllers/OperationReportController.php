@@ -23,6 +23,172 @@ class OperationReportController extends Controller
 	   $this->middleware('jwt.auth');
 	}
 	
+	public function list_province()
+	{
+		$items = DB::select("
+			select province_code, province_name
+			from dqs_province
+			order by province_name asc
+		");
+		return response()->json($items);
+	}
+	
+	public function auto_name(Request $request)
+	{
+		$items = DB::select("
+			select distinct cust_name
+			from dqs_merge_cif
+			where cust_name like ?
+		", array('%' . $request->q . '%'));
+		return response()->json($items);
+	}
+	
+	public function auto_surname(Request $request)
+	{
+		$items = DB::select("
+			select distinct cust_surname
+			from dqs_merge_cif
+			where cust_surname like ?
+		", array('%' . $request->q . '%'));
+		return response()->json($items);	
+	}
+	
+	public function list_operation()
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		if ($role->all_branch_flag == 1) {
+			$items = DB::select("
+				select distinct a.operation_id, a.operation_name
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region		
+			");
+		} else {
+			$items = DB::select("
+				select distinct a.operation_id, a.operation_name
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region	
+				where c.brcd = ?
+			", array($user->branch_code));		
+		}
+		
+		return response()->json($items);
+	}
+	
+	public function list_region(Request $request)
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		if ($role->all_branch_flag == 1) {
+			$items = DB::select("
+				select distinct c.region, c.regdesc
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region		
+				where a.operation_id = ?
+			", array($request->operation_id));
+		} else {
+			$items = DB::select("
+				select distinct c.region, c.regdesc
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region	
+				where c.brcd = ?
+				and a.operation_id = ?
+			", array($user->branch_code, $request->operation_id));		
+		}
+		
+		return response()->json($items);	
+	}
+	
+	public function list_district(Request $request)
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		if ($role->all_branch_flag == 1) {
+			$items = DB::select("
+				select distinct c.dist, c.distdesc
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region		
+				where c.region = ?
+			", array($request->region));
+		} else {
+			$items = DB::select("
+				select distinct c.dist, c.distdesc
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region	
+				where c.brcd = ?
+				and c.region = ?
+			", array($user->branch_code, $request->region));		
+		}
+		
+		return response()->json($items);
+		
+	}
+	
+	public function list_branch(Request $request)
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		if ($role->all_branch_flag == 1) {
+			$items = DB::select("
+				select distinct c.brcd, c.[desc]
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region		
+				where c.dist = ?
+			", array($request->dist));
+		} else {
+			$items = DB::select("
+				select distinct c.brcd, c.[desc]
+				from dqs_branch_operation a
+				left outer join dqs_region b
+				on a.operation_id = b.operation_id
+				left outer join dqs_branch c
+				on b.region_code = c.region	
+				where c.brcd = ?
+				and c.dist = ?
+			", array($user->branch_code, $request->dist));		
+		}
+		
+		return response()->json($items);
+		
+	}
+	
 	public function no_progress(Request $request)
 	{
 		$user = DQSUser::find(Auth::user()->personnel_id);
@@ -1395,6 +1561,327 @@ class OperationReportController extends Controller
 			});
 
 		})->export('xls');		
+	}
+
+	public function kpi_result(Request $request)
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		$operations_in = array();
+		$op_query_string = '';
+		empty($request->operation_code) ?: ($op_query_string .= ' and operation_code = ? ' AND $operations_in[] = $request->operation_code);
+		empty($request->region_code) ?: ($op_query_string .= ' and region_code = ? ' AND $operations_in[] = $request->region_code);	
+		empty($request->district_code) ?: ($op_query_string .= ' and district_code = ? ' AND $operations_in[] = $request->district_code);	
+		if ($role->all_branch_flag == 1) {
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
+		} else {
+			$op_query_string .= ' and contact_branch_code = ? ';
+			$operations_in[] = $user->branch_code;			
+		}
+		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
+		empty($request->month) ?: ($op_query_string .= ' and month_no <= ? ' AND $operations_in[] = $request->month);	
+
+		$country_query = "
+			select sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+			sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+			sum(nof_all_cif) nof_all_cif, 
+			cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+			cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+			(select count(distinct concat(year,month_no))
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?) as numeric(15,2)) as average_kpi
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?
+		";		
+		
+		$country = DB::select($country_query, array($request->year, $request->month, $request->year, $request->month));
+		
+		$operations_query = "
+			select operation_code, operation_name, 
+			sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+			sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+			sum(nof_all_cif) nof_all_cif, 
+			cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+			cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+			(select count(distinct concat(year,month_no))
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?) as numeric(15,2)) as average_kpi
+			from dqs_kpi_result
+			where 1=1
+			{$op_query_string}
+			group by operation_code, operation_name	
+		";
+		array_unshift($operations_in, $request->month);
+		array_unshift($operations_in, $request->year);
+		$operations = DB::select($operations_query, $operations_in);
+		//return $operations;
+		foreach ($operations as $o) {
+			$regions_in = $operations_in;
+			$regions_query = "
+				select region_code, region_name, 
+				sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+				sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+				sum(nof_all_cif) nof_all_cif, 
+				cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+				cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+				(select count(distinct concat(year,month_no))
+				from dqs_kpi_result
+				where year = ?
+				and month_no <= ?) as numeric(15,2)) as average_kpi
+				from dqs_kpi_result
+				where operation_code = ?
+				{$op_query_string}
+				group by region_code, region_name				
+			";
+			array_unshift($regions_in, $o->operation_code);
+			array_unshift($regions_in, $request->month);
+			array_unshift($regions_in, $request->year);			
+			$regions = DB::select($regions_query, $regions_in);
+			foreach ($regions as $r) {
+				$districts_in = $operations_in;
+				$districts_query = "
+					select district_code, district_name, 
+					sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+					sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+					sum(nof_all_cif) nof_all_cif, 
+					cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+					cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+					(select count(distinct concat(year,month_no))
+					from dqs_kpi_result
+					where year = ?
+					and month_no <= ?) as numeric(15,2)) as average_kpi
+					from dqs_kpi_result
+					where region_code = ?
+					{$op_query_string}
+					group by district_code, district_name										
+				";
+				array_unshift($districts_in, $r->region_code);
+				array_unshift($districts_in, $request->month);
+				array_unshift($districts_in, $request->year);					
+				$districts = DB::select($districts_query, $districts_in);
+				foreach ($districts as $d) {
+					$branches_in = $operations_in;
+					$branches_query = "
+						select contact_branch_code, contact_branch_name, 
+						sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+						sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+						sum(nof_all_cif) nof_all_cif, 
+						cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+						cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+						(select count(distinct concat(year,month_no))
+						from dqs_kpi_result
+						where year = ?
+						and month_no <= ?) as numeric(15,2)) as average_kpi
+						from dqs_kpi_result
+						where district_code = ?
+						{$op_query_string}
+						group by contact_branch_code, contact_branch_name								
+					";
+					array_unshift($branches_in, $d->district_code);
+					array_unshift($branches_in, $request->month);
+					array_unshift($branches_in, $request->year);						
+					$branches = DB::select($branches_query, $branches_in);		
+					$d->branches = $branches;
+				}
+				$r->districts = $districts;
+			}
+			$o->regions = $regions;
+		}
+		return response()->json(["country" => $country, "operations" => $operations]);
+	}
+	
+	public function kpi_result_export(Request $request)
+	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}
+		
+		$operations_in = array();
+		$op_query_string = '';
+		empty($request->operation_code) ?: ($op_query_string .= ' and operation_code = ? ' AND $operations_in[] = $request->operation_code);
+		empty($request->region_code) ?: ($op_query_string .= ' and region_code = ? ' AND $operations_in[] = $request->region_code);	
+		empty($request->district_code) ?: ($op_query_string .= ' and district_code = ? ' AND $operations_in[] = $request->district_code);	
+		if ($role->all_branch_flag == 1) {
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
+		} else {
+			$op_query_string .= ' and contact_branch_code = ? ';
+			$operations_in[] = $user->branch_code;			
+		}
+		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
+		empty($request->month) ?: ($op_query_string .= ' and month_no <= ? ' AND $operations_in[] = $request->month);	
+
+		$country_query = "
+			select sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+			sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+			sum(nof_all_cif) nof_all_cif, 
+			cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+			cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+			(select count(distinct concat(year,month_no))
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?) as numeric(15,2)) as average_kpi
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?
+		";		
+		
+		$country = DB::select($country_query, array($request->year, $request->month, $request->year, $request->month));
+		
+		$operations_query = "
+			select operation_code, operation_name, 
+			sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+			sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+			sum(nof_all_cif) nof_all_cif, 
+			cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+			cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+			(select count(distinct concat(year,month_no))
+			from dqs_kpi_result
+			where year = ?
+			and month_no <= ?) as numeric(15,2)) as average_kpi
+			from dqs_kpi_result
+			where 1=1
+			{$op_query_string}
+			group by operation_code, operation_name	
+		";
+		array_unshift($operations_in, $request->month);
+		array_unshift($operations_in, $request->year);
+		$operations = DB::select($operations_query, $operations_in);
+		//return $operations;
+		foreach ($operations as $o) {
+			$regions_in = $operations_in;
+			$regions_query = "
+				select region_code, region_name, 
+				sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+				sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+				sum(nof_all_cif) nof_all_cif, 
+				cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+				cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+				(select count(distinct concat(year,month_no))
+				from dqs_kpi_result
+				where year = ?
+				and month_no <= ?) as numeric(15,2)) as average_kpi
+				from dqs_kpi_result
+				where operation_code = ?
+				{$op_query_string}
+				group by region_code, region_name				
+			";
+			array_unshift($regions_in, $o->operation_code);
+			array_unshift($regions_in, $request->month);
+			array_unshift($regions_in, $request->year);			
+			$regions = DB::select($regions_query, $regions_in);
+			foreach ($regions as $r) {
+				$districts_in = $operations_in;
+				$districts_query = "
+					select district_code, district_name, 
+					sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+					sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+					sum(nof_all_cif) nof_all_cif, 
+					cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+					cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+					(select count(distinct concat(year,month_no))
+					from dqs_kpi_result
+					where year = ?
+					and month_no <= ?) as numeric(15,2)) as average_kpi
+					from dqs_kpi_result
+					where region_code = ?
+					{$op_query_string}
+					group by district_code, district_name										
+				";
+				array_unshift($districts_in, $r->region_code);
+				array_unshift($districts_in, $request->month);
+				array_unshift($districts_in, $request->year);					
+				$districts = DB::select($districts_query, $districts_in);
+				foreach ($districts as $d) {
+					$branches_in = $operations_in;
+					$branches_query = "
+						select contact_branch_code, contact_branch_name, 
+						sum(nof_person_incomplete_cif) nof_person_incomplete_cif, 
+						sum(nof_nodoc_incomplete_cif) nof_nodoc_incomplete_cif, 
+						sum(nof_all_cif) nof_all_cif, 
+						cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2)) percent_complete,
+						cast(cast(round(cast(sum(nof_complete_cif) as numeric(15,2))/cast(sum(nof_all_cif) as numeric(15,2)) * 100, 2) as numeric(15,2))/
+						(select count(distinct concat(year,month_no))
+						from dqs_kpi_result
+						where year = ?
+						and month_no <= ?) as numeric(15,2)) as average_kpi
+						from dqs_kpi_result
+						where district_code = ?
+						{$op_query_string}
+						group by contact_branch_code, contact_branch_name								
+					";
+					array_unshift($branches_in, $d->district_code);
+					array_unshift($branches_in, $request->month);
+					array_unshift($branches_in, $request->year);						
+					$branches = DB::select($branches_query, $branches_in);		
+					$d->branches = $branches;
+				}
+				$r->districts = $districts;
+			}
+			$o->regions = $regions;
+		}
+		$filename = "KPI_Result_Report_" . date('dm') .  substr(date('Y') + 543,2,2);
+		$x = Excel::create($filename, function($excel) use($country, $operations, $filename) {
+			$excel->sheet($filename, function($sheet) use($country, $operations) {
+				$sheet->appendRow(array('', '', 'ไม่สมบูรณ์(บุคคล)', 'ไม่ส่งเอกสาร(นิติบุคคล)', 'ทั้งหมด', '%ความถูกต้อง', 'KPI เฉลี่ย'));	
+				$sheet->appendRow(array('ทั้งประเทศ', 'ผลรวม', $country[0]->nof_person_incomplete_cif, $country[0]->nof_nodoc_incomplete_cif, $country[0]->nof_all_cif, $country[0]->percent_complete, $country[0]->average_kpi));	
+				foreach ($operations as $o) {
+					$sheet->appendRow(array(
+						$o->operation_name,
+						'ผลรวม',
+						$o->nof_person_incomplete_cif,
+						$o->nof_nodoc_incomplete_cif,
+						$o->nof_all_cif,
+						$o->percent_complete,
+						$o->average_kpi
+					));
+					foreach ($o->regions as $r) {
+						$sheet->appendRow(array(
+							'--' . $r->region_name,
+							'ผลรวม',
+							$r->nof_person_incomplete_cif,
+							$r->nof_nodoc_incomplete_cif,
+							$r->nof_all_cif,
+							$r->percent_complete,
+							$r->average_kpi
+						));					
+						foreach ($r->districts as $d) {
+							$sheet->appendRow(array(
+								'----' . $d->district_name,
+								'ผลรวม',
+								$d->nof_person_incomplete_cif,
+								$d->nof_nodoc_incomplete_cif,
+								$d->nof_all_cif,
+								$d->percent_complete,
+								$d->average_kpi
+							));
+							$sheet->appendRow(array('------รหัสสาขา', 'ชื่อสาขา'));
+							foreach ($d->branches as $b) {
+								$sheet->appendRow(array(
+								'------' . $b->contact_branch_code,
+								$b->contact_branch_name,
+								$b->nof_person_incomplete_cif,
+								$b->nof_nodoc_incomplete_cif,
+								$b->nof_all_cif,
+								$b->percent_complete,
+								$b->average_kpi
+								));									
+							}
+						}
+					}
+				}
+
+			});
+
+		})->export('xls');	
 	}	
 	
 }

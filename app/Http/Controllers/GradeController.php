@@ -22,7 +22,16 @@ class GradeController extends Controller
 
 	   $this->middleware('jwt.auth');
 	}
-   
+	
+	public function list_rule()
+	{
+		$items = DB::select("
+			select rule_id, rule_name
+			from dqs_rule
+		");
+		return response()->json(['data' => $items]);
+	}
+	
     public function index(Request $request)
     {
 		if (empty($request->search_all)) {
