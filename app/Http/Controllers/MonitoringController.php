@@ -46,8 +46,8 @@ class MonitoringController extends Controller
 			$items = DB::select("
 				select brcd, [desc]
 				from dqs_branch
-				where brcd = ?
-			", array($user->branch_code));		
+				where ccdef = ?
+			", array($user->revised_cost_center));		
 		}
 		return response()->json($items);
 	}
@@ -659,6 +659,7 @@ class MonitoringController extends Controller
 					$item->approve_user = Auth::user()->personnel_id;
 					$item->approve_dttm = date('Y-m-d H:i:s');					
 				} else {
+					$warning = "You do not have permission to update Explain Status.";
 				}
 				$item->save();
 			}			
@@ -689,12 +690,13 @@ class MonitoringController extends Controller
 					$item->approve_user = Auth::user()->personnel_id;
 					$item->approve_dttm = date('Y-m-d H:i:s');
 				} else {
+					$warning = "You do not have permission to update Explain Status.";
 				}
 				$item->save();
 			}	
 		}
 		
-		return response()->json(['status' => 200, 'data' => $item]);	
+		return response()->json(['status' => 200, 'data' => $item, 'warning' => $warning]);	
 	}
 	
 	public function cdmd_update(Request $request, $header_id) {	
@@ -824,8 +826,9 @@ class MonitoringController extends Controller
 			if ($role->all_branch_flag == 1) {
 				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
 			} else {
-				$query .= " and a.contact_branch_code = ? ";
-				$qinput[] = $user->branch_code;
+				$query .= " and a.contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ";
+				$qinput[] = $user->revised_cost_center;
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
 			}
 			
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
@@ -879,8 +882,9 @@ class MonitoringController extends Controller
 			if ($role->all_branch_flag == 1) {
 				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
 			} else {
-				$query .= " and a.contact_branch_code = ? ";
-				$qinput[] = $user->branch_code;
+				$query .= " and a.contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ";
+				$qinput[] = $user->revised_cost_center;
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
 			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
@@ -958,7 +962,13 @@ class MonitoringController extends Controller
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			if ($role->all_branch_flag == 1) {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ";
+				$qinput[] = $user->revised_cost_center;
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
@@ -1012,7 +1022,13 @@ class MonitoringController extends Controller
 						
 			$qinput = array();
 			
-			empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			if ($role->all_branch_flag == 1) {
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			} else {
+				$query .= " and a.contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ";
+				$qinput[] = $user->revised_cost_center;
+				empty($request->contact_branch_code) ?: ($query .= " and a.contact_branch_code = ? " AND $qinput[] = $request->contact_branch_code);
+			}
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
@@ -1092,9 +1108,12 @@ class MonitoringController extends Controller
 			$header = $query[0];
 			
 			$items = DB::select("
-				select initial_validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
-				from dqs_initial_validate
-				where validate_initial_header_id = ?
+				select a.cif_no, initial_validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
+				from dqs_initial_validate a
+				left outer join dqs_cust b
+				on a.cif_no = b.acn        
+				cross join dqs_system_config c
+				where a.validate_initial_header_id = ?
 			", array($header_id));
 			
 			// Get the current page from the url if it's not set default to 1
@@ -1127,9 +1146,12 @@ class MonitoringController extends Controller
 			$header = $query[0];
 			
 			$items = DB::select("
-				select validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
-				from dqs_validate
-				where validate_header_id = ?
+				select a.cif_no, validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
+				from dqs_validate a
+				left outer join dqs_cust b
+				on a.cif_no = b.acn        
+				cross join dqs_system_config c
+				where a.validate_header_id = ?
 			", array($header_id));
 			
 			// Get the current page from the url if it's not set default to 1

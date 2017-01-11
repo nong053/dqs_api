@@ -78,8 +78,8 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region	
-				where c.brcd = ?
-			", array($user->branch_code));		
+				where c.ccdef = ?
+			", array($user->revised_cost_center));		
 		}
 		
 		return response()->json($items);
@@ -111,9 +111,9 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region	
-				where c.brcd = ?
+				where c.ccdef = ?
 				and a.operation_id = ?
-			", array($user->branch_code, $request->operation_id));		
+			", array($user->revised_cost_center, $request->operation_id));		
 		}
 		
 		return response()->json($items);	
@@ -145,9 +145,9 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region	
-				where c.brcd = ?
+				where c.ccdef = ?
 				and c.region = ?
-			", array($user->branch_code, $request->region));		
+			", array($user->revised_cost_center, $request->region));		
 		}
 		
 		return response()->json($items);
@@ -180,9 +180,9 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region	
-				where c.brcd = ?
+				where c.ccdef = ?
 				and c.dist = ?
-			", array($user->branch_code, $request->dist));		
+			", array($user->revised_cost_center, $request->dist));		
 		}
 		
 		return response()->json($items);
@@ -205,8 +205,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no = ? ' AND $operations_in[] = $request->month);	
@@ -323,8 +324,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);		
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no = ? ' AND $operations_in[] = $request->month);	
@@ -498,8 +500,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no = ? ' AND $operations_in[] = $request->month);	
@@ -616,8 +619,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no = ? ' AND $operations_in[] = $request->month);	
@@ -792,8 +796,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and b.brcd = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and b.brcd = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
 		$operations_query = "
@@ -924,8 +929,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and b.brcd = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and b.brcd = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
 		$operations_query = "
@@ -1125,8 +1131,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
 		$operations_query = "
@@ -1260,8 +1267,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);		
 		}
 
 		$operations_query = "
@@ -1579,8 +1587,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);				
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no <= ? ' AND $operations_in[] = $request->month);	
@@ -1713,8 +1722,9 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code = ? ';
-			$operations_in[] = $user->branch_code;			
+			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			$operations_in[] = $user->revised_cost_center;			
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
 		empty($request->month) ?: ($op_query_string .= ' and month_no <= ? ' AND $operations_in[] = $request->month);	

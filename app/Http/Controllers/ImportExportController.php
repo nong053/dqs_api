@@ -13,6 +13,7 @@ use Auth;
 use Excel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportCitizenJob;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -148,80 +149,16 @@ class ImportExportController extends Controller
 			} else {
 
 				$f->move($importpath,$f->getClientOriginalName());				
-				$readcount = 0;
-				$insertcount = 0;
-				set_time_limit(300);
+				//set_time_limit(300);
 				$filelocation = $importpath.$f->getClientOriginalName();
-				$filetxt = file($filelocation);
-				$readcount = 0;
-				$insertcount = 0;
-				$commitcount = 0;
-			//	DB::transaction(function ($filetxt) use ($filetxt){	
-					foreach($filetxt as $l) {
-						//$item = explode('|',$line);
-
-						$readcount += 1;
-
-						//$line = iconv("tis-620", "utf-8", $l);
-						$cz = new CitizenImport;
-						$cz->ref_no = trim(substr($l,0,11));
-						$cz->pid = trim(substr($l,11,13));
-						$cz->fname = iconv("tis-620", "utf-8", trim(substr($l,24,30)));
-						$cz->lname = iconv("tis-620", "utf-8", trim(substr($l,54,30)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,84,8)))) ? $cz->dob = null : $cz->dob = iconv("tis-620", "utf-8", trim(substr($l,84,8)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,92,1)))) ? $cz->sex = null : $cz->sex = iconv("tis-620", "utf-8", trim(substr($l,92,1)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,93,13)))) ? $cz->npid = null : $cz->npid = iconv("tis-620", "utf-8", trim(substr($l,93,13)));
-						$cz->ntitle = iconv("tis-620", "utf-8", trim(substr($l,106,30)));
-						$cz->nfname = iconv("tis-620", "utf-8", trim(substr($l,136,30)));
-						$cz->nlname = iconv("tis-620", "utf-8", trim(substr($l,166,30)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,196,8)))) ? $cz->ndob = null : $cz->ndob = iconv("tis-620", "utf-8", trim(substr($l,196,8)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,204,1)))) ? $cz->nsex = null : $cz->nsex = iconv("tis-620", "utf-8", trim(substr($l,204,1)));
-						$cz->hno = iconv("tis-620", "utf-8", trim(substr($l,205,16)));
-						$cz->moo = iconv("tis-620", "utf-8", trim(substr($l,221,6)));
-						$cz->trok = iconv("tis-620", "utf-8", trim(substr($l,227,40)));
-						$cz->soi = iconv("tis-620", "utf-8", trim(substr($l,267,40)));
-						$cz->thanon = iconv("tis-620", "utf-8", trim(substr($l,307,40)));
-						$cz->thumbol = iconv("tis-620", "utf-8", trim(substr($l,347,40)));
-						$cz->amphur = iconv("tis-620", "utf-8", trim(substr($l,387,40)));
-						$cz->province = iconv("tis-620", "utf-8", trim(substr($l,427,40)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,467,2)))) ? $cz->flag = null : $cz->flag = iconv("tis-620", "utf-8", trim(substr($l,467,2)));
-						empty(iconv("tis-620", "utf-8", trim(substr($l,469,2)))) ? $cz->flag_1 : $cz->flag_1 = iconv("tis-620", "utf-8", trim(substr($l,469,2)));
-						$cz->thai_flag = 1;
-						$cz->manual_add_flag = 0;
-						$cz->created_by = Auth::user()->personnel_id;
-						$cz->updated_by = Auth::user()->personnel_id;
-						try {
-							$cz->save();
-							$insertcount += 1;
-						} catch (QueryException $e) {
-							return $e;
-						}
-						try {
-						Customer::where("acn",trim(substr($l,0,11)))->update(['citizen_import_flag' => 1, 'citizen_import_date' => date('Ymd H:i:s')]);
-						} catch (QueryException $e) {
-							return ['line' => $l, 'ref_no' => trim(substr($l,0,11)), 'error' => $e];
-						}
-					}	
-		//		});
-				rename($importpath.$f->getClientOriginalName(), $importpath."archive/".$f->getClientOriginalName());
-				$successes[] = [
-					"filename" => $f->getClientOriginalName()
-				];
-				$log = new ImportLog;
-				$log->contact_type = "Import Citizen";
-				$log->file_name = $f->getClientOriginalName();
-				$log->file_instance = $f->getClientOriginalName();
-				$log->start_date_time = $start_at;
-				$log->end_date_time = date('Ymd H:i:s');
-				$log->total_record_read_file = $readcount;
-				$log->total_record_insert_table = $insertcount;
-				$log->save();				
+				$this->dispatch(new ImportCitizenJob(Auth::user()->personnel_id, $importpath, $f->getClientOriginalName(), $filelocation, $start_at));
+		
 			}
 		}
 		
 
 
-		return response()->json(["status" => 200, "success" => $successes, "error" => $errors]);
+		return response()->json(["status" => 200, "error" => $errors]);
    }
    
    public function export_sms(Request $request)
