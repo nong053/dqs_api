@@ -1552,10 +1552,11 @@ class OperationReportController extends Controller
 		$x = Excel::create($filename, function($excel) use($items, $filename) {
 			$excel->sheet($filename, function($sheet) use($items) {
 				
-				$sheet->appendRow(array('CIF No.', 'Cust Type', 'ID', 'Own Branch', 'Last Contact Branch', 'Province', 'Name', 'Surname'));
+				$sheet->appendRow(array('Merge ID', 'CIF No.', 'Cust Type', 'ID', 'Own Branch', 'Last Contact Branch', 'Province', 'Name', 'Surname'));
 		
 				foreach ($items as $i) {
 					$sheet->appendRow(array(
+						$i->merge_id,
 						$i->cif_no, 
 						$i->cust_type, 
 						$i->citizen_id, 

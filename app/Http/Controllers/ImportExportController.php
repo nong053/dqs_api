@@ -11,6 +11,7 @@ use DB;
 use Validator;
 use Auth;
 use Excel;
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportCitizenJob;
@@ -172,10 +173,11 @@ class ImportExportController extends Controller
 		$outpath = $config->export_file_path;
 		$limit = $config->export_citizen_max_record;
 		$include_date = $config->export_include_date_flag;
+		$zipfilename = "exp_cif_mobile_" . date('dm') .  substr(date('Y') + 543,2,2);
 		if ($include_date == 1) {
-			$filenamemaster = "exp_cif_mobile_" . date('dm') .  substr(date('Y') + 543,2,2) . date('His');
+			$filenamemaster = "cif_mobile_" . date('dm') .  substr(date('Y') + 543,2,2) . date('His');
 		} else {
-			$filenamemaster = "exp_cif_mobile_" . date('dm') .  substr(date('Y') + 543,2,2);
+			$filenamemaster = "cif_mobile_"; //. date('dm') .  substr(date('Y') + 543,2,2);
 		}
 		
 		$filecount = 1;
@@ -232,16 +234,17 @@ class ImportExportController extends Controller
 			$offSet = ($page * $perPage) - $perPage;
 			$itemsForCurrentPage = array_slice($items, $offSet, $perPage, false);			
 		}
-		$clearold = exec('del "'.$outpath . $filenamemaster . '.zip"');
-		$result = exec('"C:\\Program Files (x86)\\7-Zip\\7z.exe" a -tzip -sdel "' . $outpath . $filenamemaster . '.zip" "' . $outpath . 'exp*.xls"');
+		$clearold = exec('del "'.$outpath . $zipfilename . '.zip"');
+		$result = exec('"C:\\Program Files (x86)\\7-Zip\\7z.exe" a -tzip -sdel "' . $outpath . $zipfilename . '.zip" "' . $outpath . 'cif*.xls"');
 		
 		//return response()->json(["status" => 200]);
-		return response()->download($outpath . $filenamemaster . '.zip', $filenamemaster . '.zip');
+		return response()->download($outpath . $zipfilename . '.zip', $zipfilename . '.zip');
    }   
    
    
    public function import_sms(Request $request)
    {
+		set_time_limit(0);
 		try {
 			$config = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
@@ -261,14 +264,24 @@ class ImportExportController extends Controller
 					"errorMessage" => "This file size is greater than maximum file size limit."
 				];
 			} else {
-
-				$f->move($importpath,$f->getClientOriginalName());				
+				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
+				$f->move($importpath, $filename);				
 				
-				foreach(file($importpath.$f->getClientOriginalName()) as $line) {
-					//$item = explode('|',$line);
-					 Customer::where("aph",trim($line))->update(["aph_use_flag" => 0]);
+				foreach(file($importpath.$filename) as $line) {
+					$item = explode('|',$line);
+					
+					if (!empty($item)) {
+						try {
+							$acn = trim($item[0]);
+							$xname = trim($item[1]);
+							$aph = trim($item[2]);
+							Customer::where("aph",$aph)->where("acn",$acn)->update(["aph_use_flag" => 0]);
+						} catch (Exception $e) {
+							//return $e;
+						}
+					}
 				}				
-				rename($importpath.$f->getClientOriginalName(), $importpath."archive/".$f->getClientOriginalName());
+				rename($importpath.$filename, $importpath."archive\\".$filename);
 				$successes[] = [
 					"filename" => $f->getClientOriginalName()
 				];

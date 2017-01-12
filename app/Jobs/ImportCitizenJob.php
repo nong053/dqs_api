@@ -50,9 +50,16 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
      */
     public function handle()
     {
+		set_time_limit(0);
 		$filetxt = file($this->filelocation);
 		$readcount = 0;
 		$insertcount = 0;
+		$log = new ImportLog;
+		$log->contact_type = "Import Citizen";
+		$log->file_name = $this->filename;
+		$log->file_instance = $this->filename;
+		$log->start_date_time = $this->start_at;
+		$log->save();
 		foreach($filetxt as $l) {
 			//$item = explode('|',$line);
 
@@ -150,14 +157,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 
 		rename($this->importpath.$this->filename, $this->importpath."archive\\".$this->filename);
 
-		$log = new ImportLog;
-		$log->contact_type = "Import Citizen";
-		$log->file_name = $this->filename;
-		$log->file_instance = $this->filename;
-		$log->start_date_time = $this->start_at;
-		$log->end_date_time = date('Ymd H:i:s');
-		$log->total_record_read_file = $readcount;
-		$log->total_record_insert_table = $insertcount;
-		$log->save();		
+		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount]);
+
     }
 }
