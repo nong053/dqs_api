@@ -120,7 +120,7 @@ class MonitoringController extends Controller
 					
 			$qfooter = "
 				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -207,7 +207,7 @@ class MonitoringController extends Controller
 					
 			$qfooter = "
 				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, a.cif_no asc
+				order by a.validate_date desc, a.explain_status asc, a.contact_date desc, a.contact_branch_name asc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -818,7 +818,7 @@ class MonitoringController extends Controller
 					
 			$qfooter = "
 				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by maxdays desc, rules desc, cast(cif_no as int) asc
+				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -874,7 +874,7 @@ class MonitoringController extends Controller
 					
 			$qfooter = "
 				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by maxdays desc, rules desc, cast(cif_no as int)
+				order by maxdays desc, rules desc, cast(a.cif_no as int)
 			";
 						
 			$qinput = array();
@@ -957,7 +957,7 @@ class MonitoringController extends Controller
 			$qfooter = "
 				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
 				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
-				order by maxdays desc, rules desc, cif_no asc
+				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -1017,7 +1017,7 @@ class MonitoringController extends Controller
 			$qfooter = "
 				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
 				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
-				order by maxdays desc, rules desc, cif_no asc
+				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
