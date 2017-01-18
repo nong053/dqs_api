@@ -268,6 +268,7 @@ class GradeController extends Controller
 					$item->fill($g);
 					$item->grade_id = $grade_id;
 					$item->updated_by = Auth::user()->personnel_id;
+					$item->save();
 					$sitem = ["condition_id" => $item->condition_id];
 					$successes[] = $sitem;					
 				}			
