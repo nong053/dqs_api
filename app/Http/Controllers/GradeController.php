@@ -26,8 +26,9 @@ class GradeController extends Controller
 	public function list_rule()
 	{
 		$items = DB::select("
-			select rule_id, rule_name
+			select rule_id, concat(rule_id,' ',rule_name) rule_name
 			from dqs_rule
+			order by rule_id
 		");
 		return response()->json(['data' => $items]);
 	}
@@ -214,30 +215,67 @@ class GradeController extends Controller
 		
 	}
 	
-	public function update_condition(Request $request, $grade_id, $condition_id)
+	public function update_condition(Request $request, $grade_id)
 	{
-		try {
-			$item = GradeCondition::findOrFail($condition_id);
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'Grade Condition not found.']);
-		}	
+		// try {
+			// $item = GradeCondition::findOrFail($condition_id);
+		// } catch (ModelNotFoundException $e) {
+			// return response()->json(['status' => 404, 'data' => 'Grade Condition not found.']);
+		// }	
 		
-		$validator = Validator::make($request->all(), [
-			'processing_seq' => 'required|integer',
-			'operator' => 'max:10',
-			'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. $condition_id .',condition_id,operator,' . $request->operator,
-			'complete_flag' => 'required|boolean',
-		]);
+		// $validator = Validator::make($request->all(), [
+			// 'processing_seq' => 'required|integer',
+			// 'operator' => 'max:10',
+			// 'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. $condition_id .',condition_id,operator,' . $request->operator,
+			// 'complete_flag' => 'required|boolean',
+		// ]);
 		
-		if ($validator->fails()) {
-			return response()->json(['status' => 400, 'data' =>  $validator->errors()]);
-		} else {
-			$item->fill($request->all());
-			$item->grade_id = $grade_id;
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();		
-			return response()->json(['status' => 200, 'data' => $item]);
+		// if ($validator->fails()) {
+			// return response()->json(['status' => 400, 'data' =>  $validator->errors()]);
+		// } else {
+			// $item->fill($request->all());
+			// $item->grade_id = $grade_id;
+			// $item->updated_by = Auth::user()->personnel_id;
+			// $item->save();		
+			// return response()->json(['status' => 200, 'data' => $item]);
+		// }
+		
+		$errors = array();
+		$successes = array();
+		
+		$grades = $request->grades;
+		
+		
+		if (empty($grades)) {
+			return response()->json(['status' => 200, 'data' => ["success" => [], "error" => []]]);
 		}
+		
+		foreach ($grades as $g) {
+			$item = GradeCondition::find($g["condition_id"]);
+			if (empty($item)) {
+				$errors[] = ["condition_id" => $g["condition_id"]];
+			} else {
+				$validator = Validator::make($g, [
+					'processing_seq' => 'required|integer',
+					'operator' => 'max:10',
+					'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. $condition_id .',condition_id,operator,' . $g["operator"] . ',complete_flag,' . $g["complete_flag"],
+					'complete_flag' => 'required|boolean'
+				]);
+
+				if ($validator->fails()) {
+					$errors[] = ["condition_id" => $g["condition_id"], "error" => $validator->errors()];
+				} else {
+					$item->fill($g);
+					$item->grade_id = $grade_id;
+					$item->updated_by = Auth::user()->personnel_id;
+					$sitem = ["condition_id" => $item->condition_id];
+					$successes[] = $sitem;					
+				}			
+
+			}
+		}
+		
+		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);			
 		
 	}	
 	

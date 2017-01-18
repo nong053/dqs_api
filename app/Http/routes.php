@@ -15,7 +15,7 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 	header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']);
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
 	header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, useXDomain, withCredentials');
-	header('Keep-Alive: timeout=10, max=100');
+	//header('Keep-Alive: timeout=10, max=100');
 }
 // Route::get('/', function () {
     // return Response::json(array('hello' => 'hehe'));
@@ -33,7 +33,7 @@ Route::group(['middleware' => 'cors'], function()
 	// Branch //
 	Route::get('dqs_branch', 'BranchController@index');
 	Route::patch('dqs_branch', 'BranchController@update');
-	Route::get('dqs_branch/export', 'BranchController@export');
+	Route::post('dqs_branch/export', 'BranchController@export');
 	Route::post('dqs_branch/recal_kpi', 'BranchController@recal_kpi');
 	
 	// Branch Operation //
@@ -90,7 +90,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_grade/rule_list', 'GradeController@list_rule');
 	Route::get('dqs_grade/{grade_id}/condition', 'GradeController@list_condition');
 	Route::post('dqs_grade/{grade_id}/condition', 'GradeController@add_condition');
-	Route::patch('dqs_grade/{grade_id}/condition/{condition_id}', 'GradeController@update_condition');
+	Route::patch('dqs_grade/{grade_id}/condition', 'GradeController@update_condition');
 	Route::delete('dqs_grade/{grade_id}/condition/{condition_id}', 'GradeController@delete_condition');
 	Route::resource('dqs_grade', 'GradeController');
 	
@@ -115,7 +115,7 @@ Route::group(['middleware' => 'cors'], function()
 	Route::get('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_explain_details');
 	Route::patch('dqs_monitoring/cdmd/{header_id}/explain', 'MonitoringController@cdmd_update_explain');
 	Route::get('dqs_monitoring/cdmd', 'MonitoringController@cdmd_index');
-	Route::get('dqs_monitoring/branch/export', 'MonitoringController@branch_export');		// add to doc
+	Route::post('dqs_monitoring/branch/export', 'MonitoringController@branch_export');		// add to doc
 	Route::patch('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_update');
 	Route::get('dqs_monitoring/branch/{header_id}', 'MonitoringController@branch_details');
 	Route::get('dqs_monitoring/branch/{header_id}/explain', 'MonitoringController@branch_explain_details');

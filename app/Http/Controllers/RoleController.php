@@ -148,12 +148,14 @@ class RoleController extends Controller
 		
 		DB::table('dqs_authorization')->where('role_id',$role_id)->delete();
 		
-		foreach ($request->menus as $menu) {
-			$auth = new DQSAuth;
-			$auth->role_id = $role_id;
-			$auth->menu_id = $menu;
-			$auth->created_by = Auth::user()->personnel_id;
-			$auth->save();
+		if (!empty($request->menus)) {
+			foreach ($request->menus as $menu) {
+				$auth = new DQSAuth;
+				$auth->role_id = $role_id;
+				$auth->menu_id = $menu;
+				$auth->created_by = Auth::user()->personnel_id;
+				$auth->save();
+			}
 		}
 		
 		$authorizes = DB::select("

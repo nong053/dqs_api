@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportCitizenJob;
+use App\Jobs\ImportSMSJob;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -148,11 +149,11 @@ class ImportExportController extends Controller
 					"errorMessage" => "This file size is greater than maximum file size limit."
 				];
 			} else {
-
-				$f->move($importpath,$f->getClientOriginalName());				
+				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
+				$f->move($importpath,$filename);				
 				//set_time_limit(300);
-				$filelocation = $importpath.$f->getClientOriginalName();
-				$this->dispatch(new ImportCitizenJob(Auth::user()->personnel_id, $importpath, $f->getClientOriginalName(), $filelocation, $start_at));
+				$filelocation = $importpath.$filename;
+				$this->dispatch(new ImportCitizenJob(Auth::user()->personnel_id, $importpath, $filename, $filelocation, $start_at));
 		
 			}
 		}
@@ -245,6 +246,7 @@ class ImportExportController extends Controller
    public function import_sms(Request $request)
    {
 		set_time_limit(0);
+		ini_set('memory_limit', '1024M');
 		try {
 			$config = SystemConfig::firstOrFail();
 		} catch (ModelNotFoundException $e) {
@@ -256,6 +258,7 @@ class ImportExportController extends Controller
 		
 		$successes = array();
 		$errors = array();
+		$warnings = array();
 		foreach ($request->file() as $f) {
 			if ($f->getClientSize() > $import_max_size) {
 				$errors[] = [
@@ -265,31 +268,16 @@ class ImportExportController extends Controller
 				];
 			} else {
 				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
-				$f->move($importpath, $filename);				
-				
-				foreach(file($importpath.$filename) as $line) {
-					$item = explode('|',$line);
-					
-					if (!empty($item)) {
-						try {
-							$acn = trim($item[0]);
-							$xname = trim($item[1]);
-							$aph = trim($item[2]);
-							Customer::where("aph",$aph)->where("acn",$acn)->update(["aph_use_flag" => 0]);
-						} catch (Exception $e) {
-							//return $e;
-						}
-					}
-				}				
-				rename($importpath.$filename, $importpath."archive\\".$filename);
-				$successes[] = [
-					"filename" => $f->getClientOriginalName()
-				];
+				$f->move($importpath,$f->getClientOriginalName());				
+				//set_time_limit(300);
+				$filelocation = $importpath.$filename;
+				$this->dispatch(new ImportSMSJob(Auth::user()->personnel_id, $importpath, $f->getClientOriginalName(), $importpath.$f->getClientOriginalName()));			
 			}
 		}
+
 		
 
-		return response()->json(["status" => 200, "success" => $successes, "error" => $errors]);
+		return response()->json(["status" => 200, "success" => $successes, "error" => $errors, "warning" => $warnings]);
    }   
    
     public function upload(Request $request)

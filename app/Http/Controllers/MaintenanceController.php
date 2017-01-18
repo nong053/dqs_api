@@ -42,7 +42,7 @@ class MaintenanceController extends Controller
 	public function import_log(Request $request)
 	{
 		$query ="			
-			select contact_type, file_name, total_record_footer_file, total_record_read_file, total_record_insert_table, start_date_time, end_date_time,
+			select contact_type, file_instance, total_record_footer_file, total_record_read_file, total_record_insert_table, convert(varchar(10),start_date_time,126) as import_date, convert(varchar(20),start_date_time,120) as start_date_time, convert(varchar(20),end_date_time,120) end_date_time,
 			cast(datediff(minute,start_date_time,end_date_time)/60 as varchar)+'h ' + cast(datediff(minute,start_date_time,end_date_time)%60 as varchar)+'m' processing_time
 			from dqs_staging.dbo.stg_import_log
 			where 1=1";			
@@ -82,7 +82,7 @@ class MaintenanceController extends Controller
 	public function export_import_log(Request $request)
 	{
 		$query ="			
-			select contact_type, file_name, total_record_footer_file, total_record_read_file, total_record_insert_table, start_date_time, end_date_time,
+			select contact_type, file_instance, total_record_footer_file, total_record_read_file, total_record_insert_table, convert(varchar(10),start_date_time,126) as import_date, convert(varchar(20),start_date_time,120) as start_date_time, convert(varchar(20),end_date_time,120) end_date_time,
 			cast(datediff(minute,start_date_time,end_date_time)/60 as varchar)+'h ' + cast(datediff(minute,start_date_time,end_date_time)%60 as varchar)+'m' processing_time
 			from dqs_staging.dbo.stg_import_log
 			where 1=1";			
@@ -103,14 +103,15 @@ class MaintenanceController extends Controller
 		$x = Excel::create($filename, function($excel) use($items, $filename) {
 			$excel->sheet($filename, function($sheet) use($items) {
 				
-				$sheet->appendRow(array('Contact Type', 'File Name', '#Footer Rows', '#Read Rows', '#Write Rows', 'Start Date Time', 'End Date Time', 'Processing Time'));
+				$sheet->appendRow(array('Contact Type', 'File Name', '#Footer Rows', '#Read Rows', '#Write Rows', 'Import Date', 'Start Date Time', 'End Date Time', 'Processing Time'));
 				foreach ($items as $i) {
 					$sheet->appendRow(array(
 						$i->contact_type, 
-						$i->file_name, 
+						$i->file_instance, 
 						$i->total_record_footer_file, 
 						$i->total_record_read_file, 
 						$i->total_record_insert_table, 
+						$i->import_date,
 						$i->start_date_time,
 						$i->end_date_time,
 						$i->processing_time,
@@ -124,7 +125,7 @@ class MaintenanceController extends Controller
 	public function reject_log(Request $request)
 	{
 		$query ="			
-			select file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
+			select concat(b.contact_type,' - ',a.file_instance) file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
 			from dqs_reject_log a
 			left outer join dqs_file b
 			on a.file_id = b.file_id
@@ -136,7 +137,7 @@ class MaintenanceController extends Controller
 		";			
 			
 		$qfooter = "
-			order by contact_type asc, file_name asc, cif_no asc
+			order by contact_type asc, a.file_instance asc, cif_no asc
 		";		
 		$qinput = array();
 		
@@ -189,7 +190,7 @@ class MaintenanceController extends Controller
 	public function export_reject_log(Request $request)
 	{
 		$query ="			
-			select contact_type, file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
+			select contact_type, file_instance, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
 			from dqs_reject_log a
 			left outer join dqs_file b
 			on a.file_id = b.file_id
@@ -224,7 +225,7 @@ class MaintenanceController extends Controller
 				$sheet->appendRow(array('Contact Type - File Name', 'CIF No', 'Own Branch', 'Last Contact Branch', 'Citizen ID', 'Birth Date', 'Reject Detail'));
 				foreach ($items as $i) {
 					$sheet->appendRow(array(
-						$i->contact_type . ' - ' . $i->file_name, 
+						$i->contact_type . ' - ' . $i->file_instance, 
 						$i->cif_no, 
 						$i->own_branch, 
 						$i->contact_branch, 

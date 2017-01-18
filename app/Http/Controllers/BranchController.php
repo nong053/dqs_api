@@ -11,9 +11,17 @@ use DB;
 use File;
 use Validator;
 use Excel;
+use SoapClient;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class OP_KPICalculation_BJ_GlobalVariables {
+			function OP_KPICalculation_BJ_GlobalVariables($JobName, $G_BranchCode) {
+				$this->JobName = $JobName;
+				$this->G_BranchCode = $G_BranchCode;
+			}
+}
 
 class BranchController extends Controller
 {
@@ -90,17 +98,30 @@ class BranchController extends Controller
 		return response()->json(['status' => 200, 'data' => ["success" => $successes, "error" => $errors]]);
 			
 	}
-	
+
 	public function recal_kpi(Request $request)
 	{
 		set_time_limit(300);
-		
-		$param = ' -PLocaleUTF8 -R"Repo_WIN-MPNE686ADQV.txt"  -G"a38aebe8_e108_4ea5_9ed0_ee55bfd8837b" -t5 -T14 -LocaleGV -GV"$JobName=J0tQSUNhbGN1bGF0aW9uUHJvY2Vzcyc;$G_BranchCode=" -GV"' . str_replace("=","",base64_encode($request->ccdef)) . ';"   -CtBatch -CmWIN-MPNE686ADQV -CaAdministrator -CjWIN-MPNE686ADQV -Cp3500';
-		$batch = 'C:/Development/BatchScript/OP_KPICalculation_BJ.bat';
-		$file_param = 'C:/Development/BatchScript/OP_KPICalculation_BJ.txt';
-		File::Delete($file_param);	
-		File::put($file_param, $param);
-		$result = exec($batch);
+
+		// $param = ' -PLocaleUTF8 -R"Repo_WIN-MPNE686ADQV.txt"  -G"a38aebe8_e108_4ea5_9ed0_ee55bfd8837b" -t5 -T14 -LocaleGV -GV"$JobName=J0tQSUNhbGN1bGF0aW9uUHJvY2Vzcyc;$G_BranchCode=" -GV"' . str_replace("=","",base64_encode($request->ccdef)) . ';"   -CtBatch -CmWIN-MPNE686ADQV -CaAdministrator -CjWIN-MPNE686ADQV -Cp3500';
+		// $batch = 'C:/Development/BatchScript/OP_KPICalculation_BJ.bat';
+		// $file_param = 'C:/Development/BatchScript/OP_KPICalculation_BJ.txt';
+		// File::Delete($file_param);	
+		// File::put($file_param, $param);
+		// $result = exec($batch);
+		$client = new SoapClient("http://10.22.51.138:8080/DataServices/servlet/webservices?ver=2.1&label=calculate_kpi&wsdl");
+		//$job = new OP_KPICalculation_BJ_GlobalVariables('OP_KPICalculation_BJ','8901');
+		//return $client->OP_KPICalculation_BJ(array("G_BranchCode" => 8901));
+		//return var_dump($client->__getTypes()); 
+
+		//return var_dump($client->__getFunctions()); 
+		//return $client->OP_KPICalculation_BJ_GlobalVariables();
+		//$params = array("OP_KPICalculation_BJ_GlobalVariables" => $job);
+		$params = array("OP_KPICalculation_BJ_GlobalVariables" => array("jobname" => 'OP_KPICalculation_BJ', "g_branchcode" => '8901'));
+		//$response = $client->__soapCall("OP_KPICalculation_BJ",array("jobname" => 'OP_KPICalculation_BJ', "g_branchcode" => '8901'));
+		return $client->OP_KPICalculation_BJ();
+		echo $client->__getLastResponse();
+		return 1;
 		return response()->json(['status' => 200, 'data' => $result]);
 	}
 	

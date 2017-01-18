@@ -77,9 +77,9 @@ class OperationReportController extends Controller
 				left outer join dqs_region b
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
-				on b.region_code = c.region	
+				on b.region_code = c.region		
 				where c.ccdef = ?
-			", array($user->revised_cost_center));		
+			", array($user->revised_cost_center));
 		}
 		
 		return response()->json($items);
@@ -104,16 +104,33 @@ class OperationReportController extends Controller
 				where a.operation_id = ?
 			", array($request->operation_id));
 		} else {
-			$items = DB::select("
-				select distinct c.region, c.regdesc
-				from dqs_branch_operation a
-				left outer join dqs_region b
-				on a.operation_id = b.operation_id
-				left outer join dqs_branch c
-				on b.region_code = c.region	
-				where c.ccdef = ?
-				and a.operation_id = ?
-			", array($user->revised_cost_center, $request->operation_id));		
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$items = DB::select("
+					select distinct c.region, c.regdesc
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where c.ccdef = ?
+				", array($user->revised_cost_center));					
+			} else {
+				$items = DB::select("
+					select distinct c.region, c.regdesc
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?
+				", array($checkop[0]->operation_id));
+			}		
 		}
 		
 		return response()->json($items);	
@@ -138,16 +155,34 @@ class OperationReportController extends Controller
 				where c.region = ?
 			", array($request->region));
 		} else {
-			$items = DB::select("
-				select distinct c.dist, c.distdesc
-				from dqs_branch_operation a
-				left outer join dqs_region b
-				on a.operation_id = b.operation_id
-				left outer join dqs_branch c
-				on b.region_code = c.region	
-				where c.ccdef = ?
-				and c.region = ?
-			", array($user->revised_cost_center, $request->region));		
+			$checkregion = DB::select("
+				selec region, regdesc
+				from dqs_branch
+				where region = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkregion)) {
+				$items = DB::select("
+					select distinct c.dist, c.distdesc
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where c.ccdef = ?
+				", array($user->revised_cost_center));				
+			} else {
+				$items = DB::select("
+					select distinct c.dist, c.distdesc
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where c.region = ?
+				", array($checkregion[0]->region));			
+			}
+				
 		}
 		
 		return response()->json($items);
@@ -173,16 +208,34 @@ class OperationReportController extends Controller
 				where c.dist = ?
 			", array($request->dist));
 		} else {
-			$items = DB::select("
-				select distinct c.brcd, c.[desc]
-				from dqs_branch_operation a
-				left outer join dqs_region b
-				on a.operation_id = b.operation_id
-				left outer join dqs_branch c
-				on b.region_code = c.region	
-				where c.ccdef = ?
-				and c.dist = ?
-			", array($user->revised_cost_center, $request->dist));		
+			$checkdist = DB::select("
+				select dist, distdesc
+				from dqs_branch
+				where dist = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkdist)) {
+				$items = DB::select("
+					select distinct c.brcd, c.[desc]
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where c.ccdef = ?
+				", array($user->revised_cost_center));					
+			} else {
+				$items = DB::select("
+					select distinct c.brcd, c.[desc]
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where c.dist = ?
+				", array($checkdist[0]->dist));					
+			}
+			
 		}
 		
 		return response()->json($items);
@@ -214,9 +267,11 @@ class OperationReportController extends Controller
 
 		if ($request->status == '') {
 		} else {
-			$op_query_string = ' and no_doc_flag = ? ';
+			$op_query_string .= ' and no_doc_flag = ? ';
 			$operations_in[] = $request->status;
 		}
+		
+		
 		$operations_query = "
 			select operation_code, operation_name, 
 			sum(iif(rule_group = 'Cleansing',1,0)) cleansing,
@@ -227,7 +282,7 @@ class OperationReportController extends Controller
 			count(1) total
 			from (
 			  select distinct operation_name, operation_code, cif_no, rule_group
-			  from dqs_initial_validate
+			  from dqs_validate
 			  where validate_status in ('incomplete','wrong')
 			  {$op_query_string}
 			) a
@@ -248,7 +303,7 @@ class OperationReportController extends Controller
 				count(1) total
 				from (
 				  select distinct region_code, region_name, cif_no, rule_group
-				  from dqs_initial_validate
+				  from dqs_validate
 				  where validate_status in ('incomplete','wrong')
 				  and operation_code = ?
 				  {$op_query_string}				  
@@ -269,7 +324,7 @@ class OperationReportController extends Controller
 					count(1) total
 					from (
 					  select distinct district_code, district_name, cif_no, rule_group
-					  from dqs_initial_validate
+					  from dqs_validate
 					  where validate_status in ('incomplete','wrong')
 					  and region_code = ?
 					  {$op_query_string}
@@ -290,7 +345,7 @@ class OperationReportController extends Controller
 						count(1) total
 						from (
 						  select distinct contact_branch_code, contact_branch_name, cif_no, rule_group
-						  from dqs_initial_validate
+						  from dqs_validate
 						  where validate_status in ('incomplete','wrong')
 						  and district_code = ?
 						  {$op_query_string}
@@ -333,7 +388,7 @@ class OperationReportController extends Controller
 
 		if ($request->status == '') {
 		} else {
-			$op_query_string = ' and no_doc_flag = ? ';
+			$op_query_string .= ' and no_doc_flag = ? ';
 			$operations_in[] = $request->status;
 		}
 		$operations_query = "
@@ -346,7 +401,7 @@ class OperationReportController extends Controller
 			count(1) total
 			from (
 			  select distinct operation_name, operation_code, cif_no, rule_group
-			  from dqs_initial_validate
+			  from dqs_validate
 			  where validate_status in ('incomplete','wrong')
 			  {$op_query_string}
 			) a
@@ -367,7 +422,7 @@ class OperationReportController extends Controller
 				count(1) total
 				from (
 				  select distinct region_code, region_name, cif_no, rule_group
-				  from dqs_initial_validate
+				  from dqs_validate
 				  where validate_status in ('incomplete','wrong')
 				  and operation_code = ?
 				  {$op_query_string}				  
@@ -388,7 +443,7 @@ class OperationReportController extends Controller
 					count(1) total
 					from (
 					  select distinct district_code, district_name, cif_no, rule_group
-					  from dqs_initial_validate
+					  from dqs_validate
 					  where validate_status in ('incomplete','wrong')
 					  and region_code = ?
 					  {$op_query_string}
@@ -409,7 +464,7 @@ class OperationReportController extends Controller
 						count(1) total
 						from (
 						  select distinct contact_branch_code, contact_branch_name, cif_no, rule_group
-						  from dqs_initial_validate
+						  from dqs_validate
 						  where validate_status in ('incomplete','wrong')
 						  and district_code = ?
 						  {$op_query_string}
@@ -522,7 +577,7 @@ class OperationReportController extends Controller
 			count(1) total
 			from (
 			  select distinct operation_name, operation_code, cif_no, rule_group
-			  from dqs_initial_validate
+			  from dqs_validate
 			  where validate_status in ('complete','correct','transfer')
 			  {$op_query_string}
 			) a
@@ -543,7 +598,7 @@ class OperationReportController extends Controller
 				count(1) total
 				from (
 				  select distinct region_code, region_name, cif_no, rule_group
-				  from dqs_initial_validate
+				  from dqs_validate
 				  where validate_status in ('complete','correct','transfer')
 				  and operation_code = ?
 				  {$op_query_string}				  
@@ -564,7 +619,7 @@ class OperationReportController extends Controller
 					count(1) total
 					from (
 					  select distinct district_code, district_name, cif_no, rule_group
-					  from dqs_initial_validate
+					  from dqs_validate
 					  where validate_status in ('complete','correct','transfer')
 					  and region_code = ?
 					  {$op_query_string}
@@ -585,7 +640,7 @@ class OperationReportController extends Controller
 						count(1) total
 						from (
 						  select distinct contact_branch_code, contact_branch_name, cif_no, rule_group
-						  from dqs_initial_validate
+						  from dqs_validate
 						  where validate_status in ('complete','correct','transfer')
 						  and district_code = ?
 						  {$op_query_string}
@@ -641,7 +696,7 @@ class OperationReportController extends Controller
 			count(1) total
 			from (
 			  select distinct operation_name, operation_code, cif_no, rule_group
-			  from dqs_initial_validate
+			  from dqs_validate
 			  where validate_status in ('complete','correct','transfer')
 			  {$op_query_string}
 			) a
@@ -662,7 +717,7 @@ class OperationReportController extends Controller
 				count(1) total
 				from (
 				  select distinct region_code, region_name, cif_no, rule_group
-				  from dqs_initial_validate
+				  from dqs_validate
 				  where validate_status in ('complete','correct','transfer')
 				  and operation_code = ?
 				  {$op_query_string}				  
@@ -683,7 +738,7 @@ class OperationReportController extends Controller
 					count(1) total
 					from (
 					  select distinct district_code, district_name, cif_no, rule_group
-					  from dqs_initial_validate
+					  from dqs_validate
 					  where validate_status in ('complete','correct','transfer')
 					  and region_code = ?
 					  {$op_query_string}
@@ -704,7 +759,7 @@ class OperationReportController extends Controller
 						count(1) total
 						from (
 						  select distinct contact_branch_code, contact_branch_name, cif_no, rule_group
-						  from dqs_initial_validate
+						  from dqs_validate
 						  where validate_status in ('complete','correct','transfer')
 						  and district_code = ?
 						  {$op_query_string}
@@ -1152,7 +1207,7 @@ class OperationReportController extends Controller
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-			from dqs_initial_validate_header
+			from dqs_validate_header
 			where kpi_flag = 1 
 			and complete_flag = 0
 			{$op_query_string}
@@ -1179,7 +1234,7 @@ class OperationReportController extends Controller
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-				from dqs_initial_validate_header
+				from dqs_validate_header
 				where kpi_flag = 1 
 				and complete_flag = 0
 				and operation_code = ?
@@ -1206,7 +1261,7 @@ class OperationReportController extends Controller
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-					from dqs_initial_validate_header
+					from dqs_validate_header
 					where kpi_flag = 1 
 					and complete_flag = 0
 					and region_code = ?
@@ -1233,7 +1288,7 @@ class OperationReportController extends Controller
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-						from dqs_initial_validate_header
+						from dqs_validate_header
 						where kpi_flag = 1 
 						and complete_flag = 0
 						and district_code = ?
@@ -1288,7 +1343,7 @@ class OperationReportController extends Controller
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 			sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-			from dqs_initial_validate_header
+			from dqs_validate_header
 			where kpi_flag = 1 
 			and complete_flag = 0
 			{$op_query_string}
@@ -1315,7 +1370,7 @@ class OperationReportController extends Controller
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 				sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-				from dqs_initial_validate_header
+				from dqs_validate_header
 				where kpi_flag = 1 
 				and complete_flag = 0
 				and operation_code = ?
@@ -1342,7 +1397,7 @@ class OperationReportController extends Controller
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 					sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-					from dqs_initial_validate_header
+					from dqs_validate_header
 					where kpi_flag = 1 
 					and complete_flag = 0
 					and region_code = ?
@@ -1369,7 +1424,7 @@ class OperationReportController extends Controller
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) = 12, 1, 0)) month_12,
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) > 12, 1, 0)) month_13,
 						sum(iif(datediff(month,validate_date,SYSDATETIME()) > 0, 1, 0)) total
-						from dqs_initial_validate_header
+						from dqs_validate_header
 						where kpi_flag = 1 
 						and complete_flag = 0
 						and district_code = ?
@@ -1498,7 +1553,7 @@ class OperationReportController extends Controller
 		$qinput = array();
 		
 		empty($request->cust_type) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type);
-		empty($request->province) ?: ($query .= " and a.province_code = ? " AND $qinput[] = $request->province);
+		empty($request->province) ?: ($query .= " and a.provice_code = ? " AND $qinput[] = $request->province);
 		empty($request->name) ?: ($query .= " and a.cust_name like ? " AND $qinput[] = '%' . $request->name . '%');
 		empty($request->surname) ?: ($query .= " and a.cust_surname like ? " AND $qinput[] = '%' . $request->surname . '%');
 		
@@ -1542,7 +1597,7 @@ class OperationReportController extends Controller
 		$qinput = array();
 		
 		empty($request->cust_type) ?: ($query .= " and a.cust_type_code = ? " AND $qinput[] = $request->cust_type);
-		empty($request->province) ?: ($query .= " and a.province_code = ? " AND $qinput[] = $request->province);
+		empty($request->province) ?: ($query .= " and a.provice_code = ? " AND $qinput[] = $request->province);
 		empty($request->name) ?: ($query .= " and a.cust_name like ? " AND $qinput[] = '%' . $request->name . '%');
 		empty($request->surname) ?: ($query .= " and a.cust_surname like ? " AND $qinput[] = '%' . $request->surname . '%');
 		

@@ -51,6 +51,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
     public function handle()
     {
 		set_time_limit(0);
+		ini_set('memory_limit', '1024M');
 		$filetxt = file($this->filelocation);
 		$readcount = 0;
 		$insertcount = 0;

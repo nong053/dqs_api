@@ -42,6 +42,15 @@ class MonitoringController extends Controller
 				select brcd, [desc]
 				from dqs_branch
 			");
+			
+			// $items = DB::select("
+				// select distinct c.brcd, c.[desc]
+				// from dqs_usage_log a
+				// left outer join dqs_user b
+				// on a.personnel_id = b.personnel_id
+				// left outer join dqs_branch c
+				// on b.branch_code = c.brcd			
+			// ");
 		} else {
 			$items = DB::select("
 				select brcd, [desc]
@@ -813,7 +822,7 @@ class MonitoringController extends Controller
 				on a.validate_initial_header_id = b.validate_initial_header_id
 				left outer join dqs_cust c
 				on a.cif_no = c.acn
-				where 1 = 1
+				where b.inform_flag = 1
 			";
 					
 			$qfooter = "
@@ -869,7 +878,7 @@ class MonitoringController extends Controller
 				on a.validate_header_id = b.validate_header_id
 				left outer join dqs_cust c
 				on a.cif_no = c.acn
-				where 1 = 1
+				where b.inform_flag = 1
 			";
 					
 			$qfooter = "
@@ -939,6 +948,11 @@ class MonitoringController extends Controller
 	
 	public function branch_export(Request $request)
 	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}	
 		if ($request->process_type == 'Initial') {
 			$query = "			
 				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, datediff(day, sysdatetime(), a.validate_date) maxdays,
@@ -957,7 +971,7 @@ class MonitoringController extends Controller
 			$qfooter = "
 				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
 				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
-				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
+				order by maxdays desc, cast(a.cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -1237,7 +1251,6 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_remark' => 'max:1'
 			]);
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
@@ -1262,7 +1275,7 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_remark' => 'max:1'
+
 			]);
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
@@ -1296,7 +1309,8 @@ class MonitoringController extends Controller
 		if ($request->process_type == 'Initial') {		
 			$path = $_SERVER['DOCUMENT_ROOT'] . '/dqs_api/public/explain_files/initial_validate/' . $header_id . '/';
 			foreach ($request->file() as $f) {
-				$f->move($path,$f->getClientOriginalName());
+				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
+				$f->move($path,$filename);
 				$item = ExplainFile::firstOrNew(array('file_path' => 'explain_files/initial_validate/' . $header_id . '/' . $f->getClientOriginalName()));
 				$item->validate_initial_header_id = $header_id;
 			//	$item->file_path = 'explain_files/initial_validate/' . $header_id . '/' . $f->getClientOriginalName();
@@ -1312,7 +1326,8 @@ class MonitoringController extends Controller
 		} else {
 			$path = $_SERVER['DOCUMENT_ROOT'] . '/dqs_api/public/explain_files/validate/' . $header_id . '/';
 			foreach ($request->file() as $f) {
-				$f->move($path,$f->getClientOriginalName());
+				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
+				$f->move($path,$filename);
 				$item = ExplainFile::firstOrNew(array('file_path' => 'explain_files/validate/' . $header_id . '/' . $f->getClientOriginalName()));
 				$item->validate_header_id = $header_id;
 				//$item->file_path = 'explain_files/validate/' . $header_id . '/' . $f->getClientOriginalName();

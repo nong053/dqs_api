@@ -149,7 +149,7 @@ class SystemConfigController extends Controller
 		}	
 		
         $validator = Validator::make($request->all(), [
-			'all_cust_grade_calculate_date' => 'required|date|date_format:Y-m-d',
+			'grade_calculate_date' => 'required|date|date_format:Y-m-d',
 			'grade_data_source' => 'required|max:1'
         ]);
 
