@@ -263,7 +263,7 @@ class GradeController extends Controller
 				]);
 
 				if ($validator->fails()) {
-					$errors[] = ["condition_id" => $g["condition_id"], "error" => $validator->errors()];
+					$errors[] = ["rule_id" => $g["rule_id"], "error" => $validator->errors()];
 				} else {
 					$item->fill($g);
 					$item->grade_id = $grade_id;
