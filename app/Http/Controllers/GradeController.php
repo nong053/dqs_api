@@ -258,7 +258,7 @@ class GradeController extends Controller
 				$validator = Validator::make($g, [
 					'processing_seq' => 'required|integer',
 					'operator' => 'max:10',
-					'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. $condition_id .',condition_id,operator,' . $g["operator"] . ',complete_flag,' . $g["complete_flag"],
+					'rule_id' => 'required|integer|unique:dqs_grade_condition,rule_id,'. g["condition_id"] .',condition_id,operator,' . $g["operator"] . ',complete_flag,' . $g["complete_flag"],
 					'complete_flag' => 'required|boolean'
 				]);
 
