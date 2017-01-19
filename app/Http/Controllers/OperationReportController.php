@@ -156,7 +156,7 @@ class OperationReportController extends Controller
 			", array($request->region));
 		} else {
 			$checkregion = DB::select("
-				selec region, regdesc
+				select region, regdesc
 				from dqs_branch
 				where region = ?
 			", array($user->revised_cost_center));
@@ -258,8 +258,77 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}					
+			
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
@@ -379,8 +448,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;	
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);		
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
@@ -555,8 +691,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;		
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
@@ -674,8 +877,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
@@ -851,9 +1121,76 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and b.brcd = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
-			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and a.last_contact_branch in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and a.last_contact_branch in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and a.last_contact_branch in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and a.last_contact_branch in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and a.last_contact_branch = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
 		$operations_query = "
@@ -984,9 +1321,76 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and b.brcd = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
-			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and a.last_contact_branch in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and a.last_contact_branch in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and a.last_contact_branch in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and a.last_contact_branch in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
+			empty($request->contact_branch_code) ?: ($op_query_string .= ' and a.last_contact_branch = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
 		$operations_query = "
@@ -1186,8 +1590,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 
@@ -1322,8 +1793,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);		
 		}
 
@@ -1643,8 +2181,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;	
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);				
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	
@@ -1778,8 +2383,75 @@ class OperationReportController extends Controller
 		if ($role->all_branch_flag == 1) {
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);	
 		} else {
-			$op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
-			$operations_in[] = $user->revised_cost_center;			
+			// $op_query_string .= ' and contact_branch_code in (select brcd from dqs_branch where ccdef = ?) ';
+			// $operations_in[] = $user->revised_cost_center;		
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						)';
+						$operations_in[] = $user->revised_cost_center;							
+					} else {	
+						$op_query_string .= ' and contact_branch_code in (
+							select distinct c.brcd
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?		
+						)';
+						$operations_in[] = $checkdist[0]->dist;							
+					}				
+				} else {		
+					$op_query_string .= ' and contact_branch_code in (
+						select distinct c.brcd
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					)';
+					$operations_in[] = $checkregion[0]->region;						
+				}			
+			} else {
+				$op_query_string .= ' and contact_branch_code in (
+					select distinct c.brcd
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				)';
+				$operations_in[] = $checkop[0]->operation_id;			
+			}								
 			empty($request->contact_branch_code) ?: ($op_query_string .= ' and contact_branch_code = ? ' AND $operations_in[] = $request->contact_branch_code);			
 		}
 		empty($request->year) ?: ($op_query_string .= ' and year = ? ' AND $operations_in[] = $request->year);	

@@ -27,6 +27,7 @@ class BranchOperationController extends Controller
 			from dqs_branch_operation a
 			left outer join dqs_branch b
 			on a.cost_center = b.ccdef
+			order by a.operation_name asc
 		");
 		return response()->json($items);
     }

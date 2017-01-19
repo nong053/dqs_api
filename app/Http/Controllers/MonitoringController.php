@@ -52,11 +52,74 @@ class MonitoringController extends Controller
 				// on b.branch_code = c.brcd			
 			// ");
 		} else {
-			$items = DB::select("
-				select brcd, [desc]
-				from dqs_branch
-				where ccdef = ?
-			", array($user->revised_cost_center));		
+			// $items = DB::select("
+				// select brcd, [desc]
+				// from dqs_branch
+				// where ccdef = ?
+			// ", array($user->revised_cost_center));		
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
+			", array($user->revised_cost_center));
+			
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$items = DB::select("
+							select distinct c.brcd, c.[desc]
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?		
+						", array($user->revised_cost_center));						
+					} else {	
+						$items = DB::select("
+							select distinct c.brcd, c.[desc]
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.dist = ?
+						", array($checkdist[0]->dist));						
+					}				
+				} else {		
+					$items = DB::select("
+						select distinct c.brcd, c.[desc]
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where c.region = ?				
+					", array($checkregion[0]->region));					
+				}			
+			} else {
+				$items = DB::select("
+					select distinct c.brcd, c.[desc]
+					from dqs_branch_operation a
+					left outer join dqs_region b
+					on a.operation_id = b.operation_id
+					left outer join dqs_branch c
+					on b.region_code = c.region	
+					where a.operation_id = ?				
+				", array($checkop[0]->operation_id));		
+			}				
 		}
 		return response()->json($items);
 	}

@@ -33,7 +33,9 @@ class RegionController extends Controller
 				left outer join dqs_branch b
 				on a.region_code = b.region
 				left outer join dqs_branch_operation c
-				on a.operation_id = c.operation_id";				
+				on a.operation_id = c.operation_id
+				order by a.region_code asc
+			";				
 
 			// Get all items you want
 			$items = DB::select($query);
@@ -50,6 +52,7 @@ class RegionController extends Controller
 				where a.region_code like ?
 				or b.regdesc like ?
 				or c.operation_name like ?
+				order by a.region_code asc
 			", array($q, $q, $q));
 
 		}
@@ -180,7 +183,7 @@ class RegionController extends Controller
 		", array($item->region_code));
 		
 		if (!empty($check)) {
-			return response()->json(['status' => 400, 'data' => 'This Region is still active in Branch Table.']);
+			return response()->json(['status' => 400, 'data' => 'ไม่สามารถลบข้อมูลได้ เนื่องจากมีการใช้งานอยู่']);
 		}
 		
 		try {
