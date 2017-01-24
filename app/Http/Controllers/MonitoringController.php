@@ -742,7 +742,7 @@ class MonitoringController extends Controller
 			}			
 		
 		} else {
-		
+			$warning = '';
 			$header = DB::select("
 				select validate_header_id
 				from dqs_validate_header
