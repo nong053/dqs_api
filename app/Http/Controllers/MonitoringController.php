@@ -707,6 +707,7 @@ class MonitoringController extends Controller
 	{
 		$checkuser = DQSUser::find(Auth::user()->personnel_id);
 		$checkrole = DQSRole::find($checkuser->role_id);
+		$warning = '';
 		if (empty($checkrole)) {
 			return response()->json(['status' => 400, 'data' => 'Role not found for current user']);
 		}	
@@ -742,7 +743,7 @@ class MonitoringController extends Controller
 			}			
 		
 		} else {
-			$warning = '';
+			
 			$header = DB::select("
 				select validate_header_id
 				from dqs_validate_header
