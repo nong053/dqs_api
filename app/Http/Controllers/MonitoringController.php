@@ -39,8 +39,9 @@ class MonitoringController extends Controller
 		
 		if ($role->all_branch_flag == '1') {
 			$items = DB::select("
-				select brcd, [desc]
+				select brcd, concat(brcd,' ',[desc]) [desc]
 				from dqs_branch
+				order by brcd asc
 			");
 			
 			// $items = DB::select("
@@ -79,45 +80,49 @@ class MonitoringController extends Controller
 					
 					if (empty($checkdist)) {
 						$items = DB::select("
-							select distinct c.brcd, c.[desc]
+							select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 							from dqs_branch_operation a
 							left outer join dqs_region b
 							on a.operation_id = b.operation_id
 							left outer join dqs_branch c
 							on b.region_code = c.region	
 							where c.ccdef = ?		
+							order by c.brcd asc
 						", array($user->revised_cost_center));						
 					} else {	
 						$items = DB::select("
-							select distinct c.brcd, c.[desc]
+							select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 							from dqs_branch_operation a
 							left outer join dqs_region b
 							on a.operation_id = b.operation_id
 							left outer join dqs_branch c
 							on b.region_code = c.region	
 							where c.dist = ?
+							order by c.brcd asc
 						", array($checkdist[0]->dist));						
 					}				
 				} else {		
 					$items = DB::select("
-						select distinct c.brcd, c.[desc]
+						select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 						from dqs_branch_operation a
 						left outer join dqs_region b
 						on a.operation_id = b.operation_id
 						left outer join dqs_branch c
 						on b.region_code = c.region	
-						where c.region = ?				
+						where c.region = ?			
+						order by c.brcd asc
 					", array($checkregion[0]->region));					
 				}			
 			} else {
 				$items = DB::select("
-					select distinct c.brcd, c.[desc]
+					select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 					from dqs_branch_operation a
 					left outer join dqs_region b
 					on a.operation_id = b.operation_id
 					left outer join dqs_branch c
 					on b.region_code = c.region	
 					where a.operation_id = ?				
+					order by c.brcd asc
 				", array($checkop[0]->operation_id));		
 			}				
 		}
@@ -726,7 +731,7 @@ class MonitoringController extends Controller
 				$item = DQSInitialValidateHeader::find($header_id);
 				$item->explain_remark = $request->explain_remark;
 				
-				if ($request->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
+				if ($item->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
 					$item->explain_status = $request->explain_status;
 					$item->approve_user = Auth::user()->personnel_id;
 					$item->approve_dttm = date('Y-m-d H:i:s');					

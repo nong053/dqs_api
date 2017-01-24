@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Branch;
+use App\DQSValidate;
+use App\DQSValidateHeader;
+use App\DQSInitialValidate;
+use App\DQSInitialValidateHeader;
+
 
 use Auth;
 //use Adldap;
@@ -81,19 +86,27 @@ class BranchController extends Controller
 			if (empty($item)) {
 				$errors[] = ["brcd" => $b["brcd"], "message" => "Branch not found."];
 			} else {
-				if ($b["brcd"] == 1) {
+				if ($b["close_flag"] == 1) {
 					$checkbranch = DB::select("
 						select count(1) count_no
 						from
 						(
-						  select 'initial' table_type, own_branch_code
-						  from dqs_initial_validate_header
+						  select 'initial' table_type, a.own_branch_code
+						  from dqs_initial_validate_header a
+						  left outer join dqs_initial_validate b
+						  on a.validate_initial_header_id = b.validate_initial_header_id
+						  where b.validate_status in ('wrong','incomplete')
+						  and b.rule_end_date is null
+						  and a.own_branch_code = ?
 						  union all
-						  select 'validate' table_type, own_branch_code
-						  from dqs_validate_header
-						) a
-						where own_branch_code = ?			
-					", array($b["brcd"]));
+						  select 'validate' table_type, a.own_branch_code
+						  from dqs_validate_header a
+						  left outer join dqs_validate b
+						  on a.validate_header_id = b.validate_header_id
+						  where b.validate_status in ('wrong','incomplete')
+						  and a.own_branch_code = ?
+						) a			
+					", array($b["brcd"],$b["brcd"]));
 					if ($checkbranch[0]->count_no > 0) {
 						$errors[] = ["brcd" => $b["brcd"], "message" => "ไม่สามารถบันทึกข้อมูลได้เนื่องจากสาขา " . $b["brcd"] . " ตรงกับสาขาที่สร้าง CIF"];
 					} else {
@@ -146,7 +159,6 @@ class BranchController extends Controller
 							inner join dqs_validate_header b 
 							on a.validate_header_id = b.validate_header_id
 							where a.contact_branch_code = ?
-							and a.rule_end_date is null
 							and a.validate_status in ('wrong','incomplete')								
 						", array($b["brcd"]));
 						

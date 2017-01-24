@@ -55,6 +55,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 		$filetxt = file($this->filelocation);
 		$readcount = 0;
 		$insertcount = 0;
+		$rejectcount = 0;
 		$log = new ImportLog;
 		$log->contact_type = "Import Citizen";
 		$log->file_name = $this->filename;
@@ -142,6 +143,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 				//$reject->birth_date = $cz->dob;
 				$reject->reject_desc = substr($e,0,254);;
 				$reject->save();
+				$rejectcount += 0;
 			} catch (Exception $e) {
 				$reject = new RejectLog;
 				$reject->file_id = 999;
@@ -151,14 +153,15 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 				$reject->citizen_id = trim(substr($l,11,13));
 				//$reject->birth_date = $cz->dob;
 				$reject->reject_desc = substr($e,0,254);;
-				$reject->save();			
+				$reject->save();	
+				$rejectcount += 0;
 			}
 
 		}	
 
 		rename($this->importpath.$this->filename, $this->importpath."archive\\".$this->filename);
 
-		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount]);
+		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount]);
 
     }
 }

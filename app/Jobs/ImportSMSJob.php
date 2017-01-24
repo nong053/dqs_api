@@ -53,6 +53,7 @@ class ImportSMSJob extends Job implements SelfHandling, ShouldQueue
 		$filetxt = file($this->filelocation);
 		$readcount = 0;
 		$insertcount = 0;
+		$rejectcount = 0;
 		$filename = iconv('UTF-8','windows-874',$this->filename);
 		$log = new ImportLog;
 		$log->contact_type = "Import SMS";
@@ -89,13 +90,14 @@ class ImportSMSJob extends Job implements SelfHandling, ShouldQueue
 						//$reject->birth_date = $cz->dob;
 						$reject->reject_desc = substr($item[0],0,100) . "|" . substr($e,0,150);
 						$reject->save();
+						$rejectcount += 1;
 					}
 				}
 			}
 			$linecount += 1;
 		}				
 		rename($this->importpath.$this->filename, $this->importpath."archive\\".$filename);	
-		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount]);		
+		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount]);		
 
     }
 }

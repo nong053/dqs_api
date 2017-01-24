@@ -78,7 +78,7 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region		
-				where c.ccdef = ?
+				where a.cost_center = ?
 			", array($user->revised_cost_center));
 		}
 		
@@ -155,22 +155,66 @@ class OperationReportController extends Controller
 				where c.region = ?
 			", array($request->region));
 		} else {
-			$checkregion = DB::select("
-				select region, regdesc
-				from dqs_branch
-				where region = ?
+			// $checkregion = DB::select("
+				// select region, regdesc
+				// from dqs_branch
+				// where region = ?
+			// ", array($request->revised_cost_center));
+			
+			// if (empty($checkregion)) {
+				// $items = DB::select("
+					// select distinct c.dist, c.distdesc
+					// from dqs_branch_operation a
+					// left outer join dqs_region b
+					// on a.operation_id = b.operation_id
+					// left outer join dqs_branch c
+					// on b.region_code = c.region	
+					// where c.ccdef = ?
+				// ", array($user->revised_cost_center));				
+			// } else {
+				// $items = DB::select("
+					// select distinct c.dist, c.distdesc
+					// from dqs_branch_operation a
+					// left outer join dqs_region b
+					// on a.operation_id = b.operation_id
+					// left outer join dqs_branch c
+					// on b.region_code = c.region	
+					// where c.region = ?
+				// ", array($checkregion[0]->region));			
+			// }
+			
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
 			", array($user->revised_cost_center));
 			
-			if (empty($checkregion)) {
-				$items = DB::select("
-					select distinct c.dist, c.distdesc
-					from dqs_branch_operation a
-					left outer join dqs_region b
-					on a.operation_id = b.operation_id
-					left outer join dqs_branch c
-					on b.region_code = c.region	
-					where c.ccdef = ?
-				", array($user->revised_cost_center));				
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$items = DB::select("
+						select distinct dist, distdesc
+						from dqs_branch
+						where ccdef = ?
+					", array($user->revised_cost_center));
+		
+				} else {		
+					$items = DB::select("
+						select distinct c.dist, c.distdesc
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where a.cost_center = ?
+						and c.region = ?
+					",array($user->revised_cost_center, $request->region));			
+				}			
 			} else {
 				$items = DB::select("
 					select distinct c.dist, c.distdesc
@@ -179,9 +223,10 @@ class OperationReportController extends Controller
 					on a.operation_id = b.operation_id
 					left outer join dqs_branch c
 					on b.region_code = c.region	
-					where c.region = ?
-				", array($checkregion[0]->region));			
-			}
+					where a.cost_center = ?
+					and c.region = ?
+				",array($user->revised_cost_center, $request->region));	
+			}								
 				
 		}
 		
@@ -199,42 +244,87 @@ class OperationReportController extends Controller
 		
 		if ($role->all_branch_flag == 1) {
 			$items = DB::select("
-				select distinct c.brcd, c.[desc]
+				select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 				from dqs_branch_operation a
 				left outer join dqs_region b
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region		
 				where c.dist = ?
+				order by c.brcd asc
 			", array($request->dist));
 		} else {
-			$checkdist = DB::select("
-				select dist, distdesc
-				from dqs_branch
-				where dist = ?
+			$checkop = DB::select("
+				select operation_id, operation_name
+				from dqs_branch_operation
+				where cost_center = ?
 			", array($user->revised_cost_center));
 			
-			if (empty($checkdist)) {
-				$items = DB::select("
-					select distinct c.brcd, c.[desc]
-					from dqs_branch_operation a
-					left outer join dqs_region b
-					on a.operation_id = b.operation_id
-					left outer join dqs_branch c
-					on b.region_code = c.region	
-					where c.ccdef = ?
-				", array($user->revised_cost_center));					
+			if (empty($checkop)) {
+				$checkregion = DB::select("
+					select region, regdesc
+					from dqs_branch
+					where region = ?
+				", array($user->revised_cost_center));
+				
+				if (empty($checkregion)) {
+					$checkdist = DB::select("
+						select dist, distdesc
+						from dqs_branch
+						where dist = ?
+					", array($user->revised_cost_center));
+					
+					if (empty($checkdist)) {
+						$items = DB::select("
+							select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where c.ccdef = ?
+							order by c.brcd asc
+						",array($user->revised_cost_center));						
+					} else {	
+						$items = DB::select("
+							select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
+							from dqs_branch_operation a
+							left outer join dqs_region b
+							on a.operation_id = b.operation_id
+							left outer join dqs_branch c
+							on b.region_code = c.region	
+							where a.cost_center = ?
+							and c.dist = ?
+							order by c.brcd asc
+						",array($user->revised_cost_center, $request->dist));					
+					}				
+				} else {		
+					$items = DB::select("
+						select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
+						from dqs_branch_operation a
+						left outer join dqs_region b
+						on a.operation_id = b.operation_id
+						left outer join dqs_branch c
+						on b.region_code = c.region	
+						where a.cost_center = ?
+						and c.dist = ?
+						order by c.brcd asc
+					",array($user->revised_cost_center, $request->dist));					
+				}			
 			} else {
 				$items = DB::select("
-					select distinct c.brcd, c.[desc]
+					select distinct c.brcd, concat(c.brcd,' ',c.[desc]) [desc]
 					from dqs_branch_operation a
 					left outer join dqs_region b
 					on a.operation_id = b.operation_id
 					left outer join dqs_branch c
 					on b.region_code = c.region	
-					where c.dist = ?
-				", array($checkdist[0]->dist));					
-			}
+					where a.cost_center = ?
+					and c.dist = ?
+					order by c.brcd asc
+				",array($user->revised_cost_center, $request->dist));
+	
+			}				
 			
 		}
 		
