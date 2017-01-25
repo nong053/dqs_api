@@ -723,7 +723,6 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_remark' => 'max:1',
 				'explain_status' => 'required|max:50'
 			]);
 			if ($validator->fails()) {
@@ -735,7 +734,9 @@ class MonitoringController extends Controller
 				if ($item->explain_status == '1-Waiting' && $checkrole->authority_flag == 1 && ($request->explain_status == '2-Approved' || $request->explain_status == '3-Not Approved')) {
 					$item->explain_status = $request->explain_status;
 					$item->approve_user = Auth::user()->personnel_id;
-					$item->approve_dttm = date('Y-m-d H:i:s');					
+					$item->approve_dttm = date('Y-m-d H:i:s');			
+					$item->explain_user = Auth::user()->personnel_id;
+					$item->explain_dttm = date('Y-m-d H:i:s');					
 				} else {
 					$warning = "You do not have permission to update Explain Status.";
 				}
@@ -754,7 +755,6 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_remark' => 'max:1',
 				'explain_status' => 'required|max:50'
 			]);
 			if ($validator->fails()) {
@@ -767,6 +767,8 @@ class MonitoringController extends Controller
 					$item->explain_status = $request->explain_status;
 					$item->approve_user = Auth::user()->personnel_id;
 					$item->approve_dttm = date('Y-m-d H:i:s');
+					$item->explain_user = Auth::user()->personnel_id;
+					$item->explain_dttm = date('Y-m-d H:i:s');
 				} else {
 					$warning = "You do not have permission to update Explain Status.";
 				}
@@ -1326,7 +1328,9 @@ class MonitoringController extends Controller
 			} else {
 				$item = DQSInitialValidateHeader::find($header_id);
 				if ($checkrole->authority_flag == 1) {
-					$item->explain_remark = $request->explain_remark;				
+					$item->explain_remark = $request->explain_remark;		
+					$item->explain_user = Auth::user()->personnel_id;
+					$item->explain_dttm = date('Y-m-d H:i:s');					
 				} else {
 				}
 				$item->save();
@@ -1352,6 +1356,8 @@ class MonitoringController extends Controller
 				$item = DQSValidateHeader::find($header_id);
 				if ($checkrole->authority_flag == 1) {
 					$item->explain_remark = $request->explain_remark;
+					$item->explain_user = Auth::user()->personnel_id;
+					$item->explain_dttm = date('Y-m-d H:i:s');
 				} else {
 				}
 				$item->save();
