@@ -723,7 +723,7 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_status' => 'required|max:50'
+				//'explain_status' => 'required|max:50'
 			]);
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
@@ -760,7 +760,7 @@ class MonitoringController extends Controller
 			}
 				
 			$validator = Validator::make($request->all(), [
-				'explain_status' => 'required|max:50'
+				//'explain_status' => 'required|max:50'
 			]);
 			if ($validator->fails()) {
 				return response()->json(['status' => 400, 'data' => $validator->errors()]);
