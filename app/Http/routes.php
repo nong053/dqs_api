@@ -126,9 +126,9 @@ Route::group(['middleware' => 'cors'], function()
 	
 	// Maintenance //
 	Route::get('dqs_maintenance/contact_type', 'MaintenanceController@contact_type');
-	Route::get('dqs_maintenance/import_log', 'MaintenanceController@import_log');
+	Route::post('dqs_maintenance/import_log', 'MaintenanceController@import_log');
 	Route::post('dqs_maintenance/import_log/export', 'MaintenanceController@export_import_log');
-	Route::get('dqs_maintenance/reject_log', 'MaintenanceController@reject_log');
+	Route::post('dqs_maintenance/reject_log', 'MaintenanceController@reject_log');
 	Route::post('dqs_maintenance/reject_log/export', 'MaintenanceController@export_reject_log');
 	Route::get('dqs_maintenance/usage_log', 'MaintenanceController@usage_log');
 	Route::post('dqs_maintenance/usage_log/export', 'MaintenanceController@export_usage_log');
