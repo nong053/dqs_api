@@ -7,6 +7,7 @@ use App\SystemConfig;
 use App\CitizenImport;
 use App\ImportLog;
 use App\RejectLog;
+use App\File;
 
 use DB;
 use Exception;
@@ -56,12 +57,25 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 		$readcount = 0;
 		$insertcount = 0;
 		$rejectcount = 0;
-		$log = new ImportLog;
-		$log->contact_type = "Import Citizen";
-		$log->file_name = $this->filename;
-		$log->file_instance = $this->filename;
-		$log->start_date_time = $this->start_at;
-		$log->save();
+		$contact_type = File::find(24);
+		if (empty($contact_type)) {
+			$contact_type = '';
+		} else {
+			$contact_type = $contact_type->contact_type;
+		}
+		$log = ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type);
+		if (empty($log)) {
+			$log = new ImportLog;
+			$log->contact_type = $contact_type;
+			$log->file_name = $this->filename;
+			$log->file_instance = $this->filename;
+			$log->start_date_time = $this->start_at;
+			$log->save();
+		} else {
+			ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type)->update([
+				'start_date_time' => $this->start_at
+			]);
+		}
 		foreach($filetxt as $l) {
 			//$item = explode('|',$line);
 
@@ -146,7 +160,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 				$rejectcount += 0;
 			} catch (Exception $e) {
 				$reject = new RejectLog;
-				$reject->file_id = 999;
+				$reject->file_id = 24;
 				$reject->file_instance = $this->filename;
 				$reject->reject_date = date('Ymd H:i:s');
 				$reject->cif_no = (int)trim(substr($l,0,11));
@@ -160,8 +174,16 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 		}	
 
 		rename($this->importpath.$this->filename, $this->importpath."archive\\".$this->filename);
+		
+		$end_date = date('Ymd H:i:s');
+		$interval = $this->start_at->diff($end_date);
 
-		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => date('Ymd H:i:s'), 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount]);
+		$minutes = $interval->days * 24 * 60;
+		$minutes += $interval->h * 60;
+		$minutes += $interval->i;
+
+	
+		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => $end_date, 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount, 'proessing_time' => floor($minutes / 60) . 'h ' . $minutes % 60 . 'm']);
 
     }
 }
