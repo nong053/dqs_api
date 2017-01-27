@@ -201,7 +201,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 		$minutes += $interval->i;
 
 	
-		ImportLog::where("file_name",$this->filename)->update(['end_date_time' => $end_date, 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount, 'proessing_time' => floor($minutes / 60) . 'h ' . $minutes % 60 . 'm']);
+		ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type)->update(['end_date_time' => $end_date, 'total_record_read_file' => $readcount, 'total_record_insert_table' =>  $insertcount, 'total_record_rejected' => $rejectcount, 'proessing_time' => floor($minutes / 60) . 'h ' . $minutes % 60 . 'm']);
 
     }
 }
