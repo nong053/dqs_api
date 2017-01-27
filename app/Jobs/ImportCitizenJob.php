@@ -79,7 +79,12 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 
 		} else {
 			ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type)->update([
-				'start_date_time' => $start_date
+				'start_date_time' => $start_date,
+				'total_record_read_file' => 0,
+				'total_record_insert_table' => 0,
+				'total_record_rejected' => 0,
+				'end_date_time' => null,
+				'proessing_time' => null
 			]);
 
 		}
