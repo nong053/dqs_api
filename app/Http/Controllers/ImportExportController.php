@@ -6,6 +6,7 @@ use App\Customer;
 use App\SystemConfig;
 use App\CitizenImport;
 use App\ImportLog;
+use App\File;
 
 use DB;
 use Validator;
@@ -150,15 +151,14 @@ class ImportExportController extends Controller
 				];
 			} else {
 				$filename = iconv('UTF-8','windows-874',$f->getClientOriginalName());
-				$f->move($importpath,$filename);				
+				$f->move($importpath,$f->getClientOriginalName());				
 				//set_time_limit(300);
 				$filelocation = $importpath.$filename;
-				$this->dispatch(new ImportCitizenJob(Auth::user()->personnel_id, $importpath, $filename, $filelocation, $start_at));
-		
+
+				$this->dispatch(new ImportCitizenJob(Auth::user()->personnel_id, $importpath, $f->getClientOriginalName(), $importpath.$f->getClientOriginalName(), $start_at));	
+				
 			}
 		}
-		
-
 
 		return response()->json(["status" => 200, "error" => $errors]);
    }

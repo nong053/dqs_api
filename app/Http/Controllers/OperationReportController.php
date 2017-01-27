@@ -78,7 +78,7 @@ class OperationReportController extends Controller
 				on a.operation_id = b.operation_id
 				left outer join dqs_branch c
 				on b.region_code = c.region		
-				where a.cost_center = ?
+				where c.ccdef = ?
 			", array($user->revised_cost_center));
 		}
 		

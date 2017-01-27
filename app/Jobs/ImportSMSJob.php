@@ -12,6 +12,7 @@ use App\File;
 use DB;
 use Exception;
 use Auth;
+use DateTime;
 
 use App\Jobs\Job;
 use Illuminate\Queue\SerializesModels;
@@ -64,7 +65,7 @@ class ImportSMSJob extends Job implements SelfHandling, ShouldQueue
 			$contact_type = $contact_type->contact_type;
 		}
 		$log = ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type);
-		if (empty($log)) {
+		if ($log->count() == 0) {
 			$log = new ImportLog;
 			$log->contact_type = $contact_type;
 			$log->file_name = $this->filename;
@@ -115,6 +116,8 @@ class ImportSMSJob extends Job implements SelfHandling, ShouldQueue
 		rename($this->importpath.$this->filename, $this->importpath."archive\\".$filename);	
 		
 		$end_date = date('Ymd H:i:s');
+		$end_date = new DateTime($end_date);
+		$start_date = new DateTime($start_date);
 		$interval = $start_date->diff($end_date);
 
 		$minutes = $interval->days * 24 * 60;

@@ -187,7 +187,7 @@ class MonitoringController extends Controller
 			
 		if ($request->process_type == 'Initial') {
 			$query = "			
-				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(initial_validate_id)
+				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(initial_validate_id) rules
 				from
 				(
 					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id
@@ -203,7 +203,8 @@ class MonitoringController extends Controller
 				group by validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag
 				order by validate_date desc, explain_status asc, contact_date desc, contact_branch_name asc, cast(cif_no as int) asc  
 			";
-						
+
+
 			$qinput = array();
 			
 			if ($role->all_branch_flag == '1') {
@@ -215,7 +216,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -273,10 +274,11 @@ class MonitoringController extends Controller
 		
 
 			// Get all items you want
+
 			$items = DB::select($query . " ) a " . $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(validate_id)
+				select validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(validate_id) rules
 				from
 				(
 					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.validate_id
@@ -304,7 +306,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -388,7 +390,7 @@ class MonitoringController extends Controller
 				
 		if ($request->process_type == 'Initial') {
 			$query = "			
-				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, 
+				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, 
 				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
 				count(d.explain_file_id) is_attached
 				from dqs_initial_validate_header a
@@ -413,7 +415,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -474,7 +476,7 @@ class MonitoringController extends Controller
 			$items = DB::select($query . $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, 
+				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, 
 				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
 				count(d.explain_file_id) is_attached
 				from dqs_validate_header a
@@ -499,7 +501,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -595,6 +597,11 @@ class MonitoringController extends Controller
 	
 	public function cdmd_details(Request $request, $header_id)
 	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}	
 		if ($request->process_type == 'Initial') {
 			$query = DB::select("
 				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
@@ -614,7 +621,7 @@ class MonitoringController extends Controller
 			// ", array($header_id));
 			$details_input = array();
 			$details_query = "
-				 select initial_validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
+				 select initial_validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, sysdatetime(), rule_start_date) days, validate_status, no_doc_flag
 				 from dqs_initial_validate
 				 where validate_initial_header_id = ?			
 			";
@@ -629,7 +636,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$details_query .= " and rule_start_date between cast(? as date) and cast(? as date) ";
+					$details_query .= " and cast(rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$details_input[] = $request->start_validate_date;
 					$details_input[] = $request->end_validate_date;				
 				}
@@ -689,7 +696,7 @@ class MonitoringController extends Controller
 			
 			$details_input = array();
 			$details_query = "
-				 select validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag
+				 select validate_id, rule_id, rule_group, rule_name, kpi_flag, datediff(day, sysdatetime(), rule_start_date) days, validate_status, no_doc_flag
 				 from dqs_validate
 				 where validate_header_id = ?			
 			";
@@ -704,7 +711,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$details_query .= " and rule_start_date between cast(? as date) and cast(? as date) ";
+					$details_query .= " and cast(rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$details_input[] = $request->start_validate_date;
 					$details_input[] = $request->end_validate_date;				
 				}
@@ -899,7 +906,7 @@ class MonitoringController extends Controller
 				} else {
 					$item = DQSInitialValidate::find($c['initial_validate_id']);
 					$item->fill($c);
-					if ($c['kpi_flag'] == 0 && $c['validate_status'] == 'correct') {
+					if ($c['kpi_flag'] == 0 || $c['validate_status'] == 'correct') {
 						$item->release_user = Auth::user()->personnel_id;
 						$item->release_dttm = date('Ymd H:i:s');
 					}
@@ -928,7 +935,7 @@ class MonitoringController extends Controller
 				} else {
 					$item = DQSValidate::find($c['validate_id']);
 					$item->fill($c);
-					if ($c['kpi_flag'] == 0 && $c['validate_status'] == 'correct') {
+					if ($c['kpi_flag'] == 0 || $c['validate_status'] == 'correct') {
 						$item->release_user = Auth::user()->personnel_id;
 						$item->release_dttm = date('Ymd H:i:s');
 					}
@@ -979,19 +986,21 @@ class MonitoringController extends Controller
 		
 		if ($request->process_type == 'Initial') {
 			$query = "			
-				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, 
-				count(b.initial_validate_id) rules 
-				from dqs_initial_validate_header a
-				left outer join dqs_initial_validate b
-				on a.validate_initial_header_id = b.validate_initial_header_id
-				left outer join dqs_cust c
-				on a.cif_no = c.acn
-				where b.inform_flag = 1
+				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(initial_validate_id) rules 
+				from 
+				(
+					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id 
+					from dqs_initial_validate_header a
+					left outer join dqs_initial_validate b
+					on a.validate_initial_header_id = b.validate_initial_header_id
+					left outer join dqs_cust c
+					on a.cif_no = c.acn
+					where b.inform_flag = 1
 			";
 					
 			$qfooter = "
-				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
+				group by validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag
+				order by maxdays desc, rules desc, cast(cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -1006,7 +1015,7 @@ class MonitoringController extends Controller
 			
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -1032,22 +1041,26 @@ class MonitoringController extends Controller
 		
 
 			// Get all items you want
-			$items = DB::select($query . $qfooter, $qinput);		
+			$items = DB::select($query ." ) a ". $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, 
-				count(b.validate_id) rules 
-				from dqs_validate_header a
-				left outer join dqs_validate b
-				on a.validate_header_id = b.validate_header_id
-				left outer join dqs_cust c
-				on a.cif_no = c.acn
-				where b.inform_flag = 1
+				select validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, 
+				count(validate_id) rules 
+				from
+				(
+					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, 
+					b.validate_id
+					from dqs_validate_header a
+					left outer join dqs_validate b
+					on a.validate_header_id = b.validate_header_id
+					left outer join dqs_cust c
+					on a.cif_no = c.acn
+					where b.inform_flag = 1
 			";
 					
 			$qfooter = "
-				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date), a.kpi_flag, a.complete_flag
-				order by maxdays desc, rules desc, cast(a.cif_no as int)
+				group by validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag
+				order by maxdays desc, rules desc, cast(cif_no as int)
 			";
 						
 			$qinput = array();
@@ -1062,7 +1075,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -1088,7 +1101,7 @@ class MonitoringController extends Controller
 		
 
 			// Get all items you want
-			$items = DB::select($query . $qfooter, $qinput);
+			$items = DB::select($query . " ) a " . $qfooter, $qinput);
 		}
 
 		// Get the current page from the url if it's not set default to 1
@@ -1118,24 +1131,26 @@ class MonitoringController extends Controller
 			return response()->json(['status' => 400, 'Role not found for current user.']);
 		}	
 		if ($request->process_type == 'Initial') {
-			$query = "			
-				select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date) days, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays,
-				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
-				count(d.explain_file_id) is_attached
-				from dqs_initial_validate_header a
-				left outer join dqs_initial_validate b
-				on a.validate_initial_header_id = b.validate_initial_header_id
-				left outer join dqs_cust c
-				on a.cif_no = c.acn
-				left outer join dqs_explain_file d
-				on a.validate_initial_header_id = d.validate_initial_header_id
-				where 1 = 1
+			$query = "		
+				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, days, maxdays, customer_flag, death_flag, type, affiliation_flag, contact_type, rule_group, rule_name, validate_status, risk, count(explain_file_id) is_attached
+				from
+				(
+					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays,
+					c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
+					d.explain_file_id
+					from dqs_initial_validate_header a
+					left outer join dqs_initial_validate b
+					on a.validate_initial_header_id = b.validate_initial_header_id
+					left outer join dqs_cust c
+					on a.cif_no = c.acn
+					left outer join dqs_explain_file d
+					on a.validate_initial_header_id = d.validate_initial_header_id
+					where b.inform_flag = 1
 			";
 					
 			$qfooter = "
-				group by a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
-				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
-				order by maxdays desc, cast(a.cif_no as int) asc
+				group by validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, days, maxdays, customer_flag, death_flag, type, affiliation_flag, contact_type, rule_group, rule_name, validate_status, risk
+				order by maxdays desc, rule_name desc, cast(cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -1150,7 +1165,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -1176,26 +1191,28 @@ class MonitoringController extends Controller
 		
 
 			// Get all items you want
-			$items = DB::select($query . $qfooter, $qinput);		
+			$items = DB::select($query . " ) a " . $qfooter, $qinput);		
 		} else {
 			$query = "			
-				select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays,
-				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name rules, b.validate_status, a.risk, 
-				count(d.explain_file_id) is_attached
-				from dqs_validate_header a
-				left outer join dqs_validate b
-				on a.validate_header_id = b.validate_header_id
-				left outer join dqs_cust c
-				on a.cif_no = c.acn
-				left outer join dqs_explain_file d
-				on a.validate_header_id = d.validate_header_id
-				where 1 = 1
+				select validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, days, maxdays, customer_flag, death_flag, type, affiliation_flag, contact_type, rule_group, rule_name, validate_status, risk, 
+				count(explain_file_id) is_attached
+				from
+				(
+					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays,
+					c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, d.explain_file_id
+					from dqs_validate_header a
+					left outer join dqs_validate b
+					on a.validate_header_id = b.validate_header_id
+					left outer join dqs_cust c
+					on a.cif_no = c.acn
+					left outer join dqs_explain_file d
+					on a.validate_header_id = d.validate_header_id
+					where b.inform_flag = 1
 			";
 					
 			$qfooter = "
-				group by a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, b.rule_start_date, b.rule_end_date), datediff(day, sysdatetime(), a.validate_date),
-				c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk
-				order by maxdays desc, rules desc, cast(a.cif_no as int) asc
+				group by validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, days, maxdays, customer_flag, death_flag, type, affiliation_flag, contact_type, rule_group, rule_name, validate_status, risk
+				order by maxdays desc, rule_name desc, cast(cif_no as int) asc
 			";
 						
 			$qinput = array();
@@ -1210,7 +1227,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$query .= " and b.rule_start_date between cast(? as date) and cast(? as date) ";
+					$query .= " and cast(b.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$qinput[] = $request->start_validate_date;
 					$qinput[] = $request->end_validate_date;				
 				}
@@ -1228,7 +1245,7 @@ class MonitoringController extends Controller
 			}
 			empty($request->explain_status) ?: ($query .= " and a.explain_status = ? " AND $qinput[] = $request->explain_status);
 			//!isset($request->affiliation_flag) ?: ($query .= " and c.affiliation_flag = ? " AND $qinput[] = $request->affiliation_flag);
-			if ($request->affiliation_flag) {
+			if ($request->affiliation_flag == '') {
 			} else {
 				$query .= " and c.affiliation_flag = ? ";
 				$qinput[] = $request->affiliation_flag;
@@ -1236,7 +1253,7 @@ class MonitoringController extends Controller
 		
 
 			// Get all items you want
-			$items = DB::select($query . $qfooter, $qinput);
+			$items = DB::select($query . " ) a " . $qfooter, $qinput);
 		}	
 		$filename = "CDMD_Branch_" . date('dm') .  substr(date('Y') + 543,2,2);
 		$x = Excel::create($filename, function($excel) use($items, $filename) {
@@ -1255,6 +1272,7 @@ class MonitoringController extends Controller
 						$i->type,
 						$i->affiliation_flag,
 						$i->contact_branch_name,
+						$i->contact_date,
 						$i->contact_type,
 						$i->rule_group,
 						$i->rule_name,
@@ -1273,6 +1291,11 @@ class MonitoringController extends Controller
 	
 	public function branch_details(Request $request, $header_id)
 	{
+		$user = DQSUser::find(Auth::user()->personnel_id);
+		$role = DQSRole::find($user->role_id);
+		if (empty($role)) {
+			return response()->json(['status' => 400, 'Role not found for current user.']);
+		}	
 		if ($request->process_type == 'Initial') {
 			$query = DB::select("
 				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
@@ -1287,12 +1310,13 @@ class MonitoringController extends Controller
 			
 			$details_input = array();
 			$details_query = "
-				select a.cif_no, initial_validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
+				select a.cif_no, initial_validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, sysdatetime(), rule_start_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
 				from dqs_initial_validate a
 				left outer join dqs_cust b
 				on a.cif_no = b.acn        
 				cross join dqs_system_config c
 				where a.validate_initial_header_id = ?		
+				and a.inform_flag = 1
 			";
 			$details_input[] = $header_id;
 			
@@ -1305,7 +1329,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$details_query .= " and a.rule_start_date between cast(? as date) and cast(? as date) ";
+					$details_query .= " and cast(a.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$details_input[] = $request->start_validate_date;
 					$details_input[] = $request->end_validate_date;				
 				}
@@ -1347,12 +1371,13 @@ class MonitoringController extends Controller
 			
 			$details_input = array();
 			$details_query = "
-				select a.cif_no, validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, rule_start_date, rule_end_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
+				select a.cif_no, validate_id, rule_id, rule_group, rule_name, a.kpi_flag, datediff(day, sysdatetime(), rule_start_date) days, validate_status, no_doc_flag, iif(datediff(day, b.cifclcd, sysdatetime()) <= c.nof_contact_date,1,0) warning
 				from dqs_validate a
 				left outer join dqs_cust b
 				on a.cif_no = b.acn        
 				cross join dqs_system_config c
 				where a.validate_header_id = ?		
+				and a.inform_flag = 1
 			";
 			$details_input[] = $header_id;
 			
@@ -1365,7 +1390,7 @@ class MonitoringController extends Controller
 				
 				if (empty($request->start_validate_date) || empty($request->end_validate_date)) {
 				} else {
-					$details_query .= " and a.rule_start_date between cast(? as date) and cast(? as date) ";
+					$details_query .= " and cast(a.rule_start_date as date) between cast(? as date) and cast(? as date) ";
 					$details_input[] = $request->start_validate_date;
 					$details_input[] = $request->end_validate_date;				
 				}

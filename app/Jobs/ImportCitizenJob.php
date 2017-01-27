@@ -12,6 +12,7 @@ use App\File;
 use DB;
 use Exception;
 use Auth;
+use DateTime;
 
 use App\Jobs\Job;
 use Illuminate\Queue\SerializesModels;
@@ -57,24 +58,30 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 		$readcount = 0;
 		$insertcount = 0;
 		$rejectcount = 0;
+		$start_date = date('Ymd H:i:s');
+		$filename = iconv('UTF-8','windows-874',$this->filename);
 		$contact_type = File::find(24);
 		if (empty($contact_type)) {
 			$contact_type = '';
 		} else {
 			$contact_type = $contact_type->contact_type;
 		}
+		
 		$log = ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type);
-		if (empty($log)) {
+		
+		if ($log->count() == 0) {
 			$log = new ImportLog;
 			$log->contact_type = $contact_type;
 			$log->file_name = $this->filename;
 			$log->file_instance = $this->filename;
-			$log->start_date_time = $this->start_at;
+			$log->start_date_time = $start_date;
 			$log->save();
+
 		} else {
 			ImportLog::where("file_name",$this->filename)->where("contact_type",$contact_type)->update([
-				'start_date_time' => $this->start_at
+				'start_date_time' => $start_date
 			]);
+
 		}
 		foreach($filetxt as $l) {
 			//$item = explode('|',$line);
@@ -144,39 +151,50 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 
 					$cz->save();								
 				}
-
-				Customer::where("acn",trim(substr($l,0,11)))->update(['citizen_import_flag' => 1, 'citizen_import_date' => date('Ymd H:i:s')]);
-				$insertcount += 1;
-			} catch (QueryException $e) {
-				$reject = new RejectLog;
-				$reject->file_id = 999;
-				$reject->file_instance = $this->filename;
-				$reject->reject_date = date('Ymd H:i:s');
-				$reject->cif_no = (int)trim(substr($l,0,11));
-				$reject->citizen_id = trim(substr($l,11,13));
-				//$reject->birth_date = $cz->dob;
-				$reject->reject_desc = substr($e,0,254);;
-				$reject->save();
-				$rejectcount += 0;
+				try	{
+					Customer::where("acn",trim(substr($l,0,11)))->update(['citizen_import_flag' => 1, 'citizen_import_date' => date('Ymd H:i:s')]);
+					$insertcount += 1;
+				} catch (Exception $e) {
+					$rejectrec = CitizenImport::find(trim(substr($l,0,11)));
+					if (!empty($rejectrec)) {
+						$rejectrec->delete();
+					}
+					$reject = new RejectLog;
+					$reject->file_id = 24;
+					$reject->file_instance = $this->filename;
+					$reject->reject_date = date('Ymd H:i:s');
+					$reject->cif_no = (int)trim(substr($l,0,11));
+					//$reject->citizen_id = trim(substr($l,11,13));
+					//$reject->birth_date = $cz->dob;
+					$reject->reject_desc = substr($e,0,254);;
+					$reject->save();
+					$rejectcount += 1;				
+				}
 			} catch (Exception $e) {
+				// $rejectrec = CitizenImport::find(trim(substr($l,0,11)));
+				// if (!empty($rejectrec)) {
+					// $rejectrec->delete();
+				// }			
 				$reject = new RejectLog;
 				$reject->file_id = 24;
 				$reject->file_instance = $this->filename;
 				$reject->reject_date = date('Ymd H:i:s');
 				$reject->cif_no = (int)trim(substr($l,0,11));
-				$reject->citizen_id = trim(substr($l,11,13));
+				//$reject->citizen_id = trim(substr($l,11,13));
 				//$reject->birth_date = $cz->dob;
 				$reject->reject_desc = substr($e,0,254);;
 				$reject->save();	
-				$rejectcount += 0;
+				$rejectcount += 1;
 			}
 
 		}	
 
-		rename($this->importpath.$this->filename, $this->importpath."archive\\".$this->filename);
+		rename($this->importpath.$this->filename, $this->importpath."archive\\".$filename);
 		
 		$end_date = date('Ymd H:i:s');
-		$interval = $this->start_at->diff($end_date);
+		$end_date = new DateTime($end_date);
+		$start_date = new DateTime($start_date);
+		$interval = $start_date->diff($end_date);
 
 		$minutes = $interval->days * 24 * 60;
 		$minutes += $interval->h * 60;
