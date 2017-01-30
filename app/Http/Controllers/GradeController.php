@@ -164,7 +164,7 @@ class GradeController extends Controller
 		}	
 		
 		$grade->conditions = DB::select("
-			select a.condition_id, a.processing_seq, a.operator, a.rule_id, b.rule_name, a.complete_flag
+			select a.condition_id, a.processing_seq, a.operator, a.rule_id, concat(a.rule_id,' ',b.rule_name) rule_name, a.complete_flag
 			from dqs_grade_condition a
 			left outer join dqs_rule b
 			on a.rule_id = b.rule_id

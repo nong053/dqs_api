@@ -26,7 +26,7 @@ class RuleController extends Controller
     {
 		if (empty($request->search_all)) {
 			$query ="			
-				select a.rule_id, a.rule_group, a.rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
+				select a.rule_id, a.rule_group, concat(a.rule_id,' ',a.rule_name) rule_name, b.data_flow_name, a.initial_flag, a.update_flag, a.last_contact_flag, a.inform_flag, a.edit_rule_release_flag
 				from dqs_rule a
 				left outer join dqs_data_flow b
 				on a.data_flow_id = b.data_flow_id
@@ -36,24 +36,44 @@ class RuleController extends Controller
 			
 			empty($request->rule_group) ?: ($query .= " and a.rule_group like ? " AND $qinput[] = "%" . $request->rule_group . "%");
 			empty($request->rule_name) ?: ($query .= " and a.rule_name like ? " AND $qinput[] = "%" . $request->rule_name . "%");
-			//!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
-			if ($request->initial_flag == '') {
-			} else {
-				$query .= " and a.initial_flag = ? ";
-				$qinput[] = $request->initial_flag;
-			}
-			//!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
-			if ($request->update_flag == '') {
-			} else {
-				$query .= " and a.update_flag = ? ";
-				$qinput[] = $request->update_flag;
-			}
-			//!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);		
-			if ($request->last_contact_flag == '') {
-			} else {
-				$query .= " and a.last_contact_flag = ? ";
-				$qinput[] = $request->last_contact_flag;
-			}
+			// //!isset($request->initial_flag) ?: ($query .= " and a.initial_flag = ? " AND $qinput[] = $request->initial_flag);
+			// if ($request->initial_flag == '') {
+			// } else {
+				// $query .= " and a.initial_flag = ? ";
+				// $qinput[] = $request->initial_flag;
+			// }
+			// //!isset($request->update_flag) ?: ($query .= " and a.update_flag = ? " AND $qinput[] = $request->update_flag);
+			// if ($request->update_flag == '') {
+			// } else {
+				// $query .= " and a.update_flag = ? ";
+				// $qinput[] = $request->update_flag;
+			// }
+			// //!isset($request->last_contact_flag) ?: ($query .= " and a.last_contact_flag = ? " AND $qinput[] = $request->last_contact_flag);		
+			// if ($request->last_contact_flag == '') {
+			// } else {
+				// $query .= " and a.last_contact_flag = ? ";
+				// $qinput[] = $request->last_contact_flag;
+			// }
+			
+			$flag_array = array();
+			empty($request->initial_flag) ?: ($flag_array[] = ' a.initial_flag ' AND $qinput[] = $request->initial_flag);
+			empty($request->update_flag) ?: $flag_array[] = ' a.update_flag ' AND $qinput[] = $request->update_flag);
+			empty($request->last_contact_flag) ?: $flag_array[] = ' a.last_contact_flag ';
+			
+			$numItems = count($flag_array);
+			$i = 0;
+			foreach($flag_array as $f) {
+				if(++$i === $numItems) {
+					$query =. " or " . $f . " = ? )";
+				} else {			
+					if ($i == 0) {
+						$query .= " and ( " . $f . " = ? ";
+					} else {
+						$query .= " or " . $f . " = ? ";
+					}
+				}
+			}    			
+			
 
 			// Get all items you want
 			$items = DB::select($query, $qinput);

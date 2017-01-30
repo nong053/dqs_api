@@ -190,7 +190,7 @@ class MonitoringController extends Controller
 				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(initial_validate_id) rules
 				from
 				(
-					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id
+					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))),0) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id
 					from dqs_initial_validate_header a
 					left outer join dqs_initial_validate b
 					on a.validate_initial_header_id = b.validate_initial_header_id
@@ -281,7 +281,7 @@ class MonitoringController extends Controller
 				select validate_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(validate_id) rules
 				from
 				(
-					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.validate_id
+					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))),0) maxdays, a.kpi_flag, a.complete_flag, b.validate_id
 					from dqs_validate_header a
 					left outer join dqs_validate b
 					on a.validate_header_id = b.validate_header_id
@@ -604,7 +604,7 @@ class MonitoringController extends Controller
 		}	
 		if ($request->process_type == 'Initial') {
 			$query = DB::select("
-				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), a.validate_date),0) maxdays,
 				count(b.initial_validate_id) rules
 				from dqs_initial_validate_header a
 				left outer join dqs_initial_validate b
@@ -678,7 +678,7 @@ class MonitoringController extends Controller
 			
 		} else {
 			$query = DB::select("
-				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), a.validate_date),0) maxdays,
 				count(b.validate_id) rules
 				from dqs_validate_header a
 				left outer join dqs_validate b
@@ -989,7 +989,7 @@ class MonitoringController extends Controller
 				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, maxdays, kpi_flag, complete_flag, count(initial_validate_id) rules 
 				from 
 				(
-					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id 
+					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))),0) maxdays, a.kpi_flag, a.complete_flag, b.initial_validate_id 
 					from dqs_initial_validate_header a
 					left outer join dqs_initial_validate b
 					on a.validate_initial_header_id = b.validate_initial_header_id
@@ -1048,7 +1048,7 @@ class MonitoringController extends Controller
 				count(validate_id) rules 
 				from
 				(
-					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays, a.kpi_flag, a.complete_flag, 
+					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))),0) maxdays, a.kpi_flag, a.complete_flag, 
 					b.validate_id
 					from dqs_validate_header a
 					left outer join dqs_validate b
@@ -1135,7 +1135,7 @@ class MonitoringController extends Controller
 				select validate_initial_header_id, cif_no, cust_full_name, validate_date, explain_status, contact_branch_name, contact_date, transaction_date, days, maxdays, customer_flag, death_flag, type, affiliation_flag, contact_type, rule_group, rule_name, validate_status, risk, count(explain_file_id) is_attached
 				from
 				(
-					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))) maxdays,
+					select a.validate_initial_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_initial_validate where validate_initial_header_id =  a.validate_initial_header_id and validate_status in ('incomplete','wrong'))),0) maxdays,
 					c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, 
 					d.explain_file_id
 					from dqs_initial_validate_header a
@@ -1198,7 +1198,7 @@ class MonitoringController extends Controller
 				count(explain_file_id) is_attached
 				from
 				(
-					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))) maxdays,
+					select a.validate_header_id, a.cif_no, a.cust_full_name, a.validate_date, a.explain_status, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), b.rule_start_date) days, isnull(datediff(day, sysdatetime(), (select min(rule_start_date) from dqs_validate where validate_header_id =  a.validate_header_id and validate_status in ('incomplete','wrong'))),0) maxdays,
 					c.customer_flag, c.death_flag, c.type, c.affiliation_flag, a.contact_type, b.rule_group, b.rule_name, b.validate_status, a.risk, d.explain_file_id
 					from dqs_validate_header a
 					left outer join dqs_validate b
@@ -1298,7 +1298,7 @@ class MonitoringController extends Controller
 		}	
 		if ($request->process_type == 'Initial') {
 			$query = DB::select("
-				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), a.validate_date),0) maxdays,
 				count(b.initial_validate_id) rules
 				from dqs_initial_validate_header a
 				left outer join dqs_initial_validate b
@@ -1359,7 +1359,7 @@ class MonitoringController extends Controller
 			
 		} else {
 			$query = DB::select("
-				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, datediff(day, sysdatetime(), a.validate_date) maxdays,
+				select a.own_branch_name, a.cif_no, a.cust_full_name, a.cust_type_desc, a.validate_date, a.contact_branch_name, a.contact_date, a.transaction_date, isnull(datediff(day, sysdatetime(), a.validate_date),0) maxdays,
 				count(b.validate_id) rules
 				from dqs_validate_header a
 				left outer join dqs_validate b
