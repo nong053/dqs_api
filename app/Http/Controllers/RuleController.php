@@ -67,10 +67,18 @@ class RuleController extends Controller
 			$numItems = count($flag_array);
 			$i = 1;
 			foreach($flag_array as $f) {
-				if($i == $numItems) {
-					$query .= " or " . $f . " = 1 )";
-				} else {			
-					$query .= " or " . $f . " = 1 ";
+				if ($numItems == 1) {
+					$query .= $f . " = 1) ";
+				} else {
+					if($i == $numItems) {
+						$query .= " or " . $f . " = 1 )";
+					} else {			
+						if ($i == 1) {
+							$query .= $f . " = 1 ";
+						} else {
+							$query .= " or " . $f . " = 1 ";
+						}
+					}
 				}
 				$i += 1;
 			}    			
