@@ -58,7 +58,7 @@ class RuleController extends Controller
 			$flag_array = array();
 			empty($request->initial_flag) ?: ($flag_array[] = ' a.initial_flag ' AND $qinput[] = $request->initial_flag);
 			empty($request->update_flag) ?: ($flag_array[] = ' a.update_flag ' AND $qinput[] = $request->update_flag);
-			empty($request->last_contact_flag) ?: $flag_array[] = ' a.last_contact_flag ' AND $qinput[] = $request->last_contact_flag);
+			empty($request->last_contact_flag) ?: ($flag_array[] = ' a.last_contact_flag ' AND $qinput[] = $request->last_contact_flag);
 			
 			$numItems = count($flag_array);
 			$i = 0;
