@@ -60,17 +60,17 @@ class RuleController extends Controller
 			empty($request->update_flag) ?: $flag_array[] = ' a.update_flag ';
 			empty($request->last_contact_flag) ?: $flag_array[] = ' a.last_contact_flag ';
 			
+			if ($request->initial_flag == 1 || $request->update_flag == 1 || $request->last_contact_flag == 1) {
+				$query .= " and ( ";
+			}
+			
 			$numItems = count($flag_array);
-			$i = 0;
+			$i = 1;
 			foreach($flag_array as $f) {
-				if($i == $numItems - 1) {
+				if($i == $numItems) {
 					$query .= " or " . $f . " = 1 )";
 				} else {			
-					if ($i == 0) {
-						$query .= " and ( " . $f . " = 1 ";
-					} else {
-						$query .= " or " . $f . " = 1 ";
-					}
+					$query .= " or " . $f . " = 1 ";
 				}
 				$i += 1;
 			}    			
