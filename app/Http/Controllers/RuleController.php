@@ -56,20 +56,20 @@ class RuleController extends Controller
 			// }
 			
 			$flag_array = array();
-			empty($request->initial_flag) ?: ($flag_array[] = ' a.initial_flag ' AND $qinput[] = $request->initial_flag);
-			empty($request->update_flag) ?: ($flag_array[] = ' a.update_flag ' AND $qinput[] = $request->update_flag);
-			empty($request->last_contact_flag) ?: ($flag_array[] = ' a.last_contact_flag ' AND $qinput[] = $request->last_contact_flag);
+			empty($request->initial_flag) ?: $flag_array[] = ' a.initial_flag ';
+			empty($request->update_flag) ?: $flag_array[] = ' a.update_flag ';
+			empty($request->last_contact_flag) ?: $flag_array[] = ' a.last_contact_flag ';
 			
 			$numItems = count($flag_array);
 			$i = 0;
 			foreach($flag_array as $f) {
 				if($i == $numItems) {
-					$query .= " or " . $f . " = ? )";
+					$query .= " or " . $f . " = 1 )";
 				} else {			
 					if ($i == 0) {
-						$query .= " and ( " . $f . " = ? ";
+						$query .= " and ( " . $f . " = 1 ";
 					} else {
-						$query .= " or " . $f . " = ? ";
+						$query .= " or " . $f . " = 1 ";
 					}
 				}
 				$i += 1;
