@@ -173,7 +173,7 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 					$reject->cif_no = (int)trim(substr($l,0,11));
 					//$reject->citizen_id = trim(substr($l,11,13));
 					//$reject->birth_date = $cz->dob;
-					$reject->reject_desc = substr($e,0,254);;
+					$reject->reject_desc = substr($e,0,254);
 					$reject->save();
 					$rejectcount += 1;				
 				}
