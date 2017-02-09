@@ -28,13 +28,17 @@ class RegionController extends Controller
     {
 		if (empty($request->search_all)) {
 			$query ="			
-				select distinct a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
-				from dqs_region a
-				left outer join dqs_branch b
-				on a.region_code = b.region
-				left outer join dqs_branch_operation c
-				on a.operation_id = c.operation_id
-				order by a.region_code asc
+				select z.*, row_number() over (order by region_code asc) seq
+				from 
+				(
+					select distinct a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
+					from dqs_region a
+					left outer join dqs_branch b
+					on a.region_code = b.region
+					left outer join dqs_branch_operation c
+					on a.operation_id = c.operation_id
+				) z
+				order by region_code asc
 			";				
 
 			// Get all items you want
@@ -43,16 +47,20 @@ class RegionController extends Controller
 			$q = "%" . $request->search_all . "%";
 		//	$qflag = $request->search_all;
 			$items = DB::select("
-				select distinct a.region_id, a.region_code, b.regdesc, c.operation_id, c.operation_name
-				from dqs_region a
-				left outer join dqs_branch b
-				on a.region_code = b.region
-				left outer join dqs_branch_operation c
-				on a.operation_id = c.operation_id
-				where a.region_code like ?
-				or b.regdesc like ?
-				or c.operation_name like ?
-				order by a.region_code asc
+				select z.*, row_number() over (order by region_code asc) seq
+				from 
+				(			
+					select distinct a.region_id, row_number() over (order by a.region_code asc) seq, a.region_code, b.regdesc, c.operation_id, c.operation_name
+					from dqs_region a
+					left outer join dqs_branch b
+					on a.region_code = b.region
+					left outer join dqs_branch_operation c
+					on a.operation_id = c.operation_id
+					where a.region_code like ?
+					or b.regdesc like ?
+					or c.operation_name like ?
+				) z
+				order by region_code asc
 			", array($q, $q, $q));
 
 		}

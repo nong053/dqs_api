@@ -42,7 +42,7 @@ class MaintenanceController extends Controller
 	public function import_log(Request $request)
 	{
 		$query ="			
-			select contact_type, file_instance, total_record_footer_file, total_record_read_file, total_record_insert_table, convert(varchar(10),start_date_time,126) as import_date, convert(varchar(20),start_date_time,120) as start_date_time, convert(varchar(20),end_date_time,120) end_date_time,
+			select row_number() over (order by contact_type asc, file_name asc) seq, contact_type, file_instance, total_record_footer_file, total_record_read_file, total_record_insert_table, convert(varchar(10),start_date_time,126) as import_date, convert(varchar(20),start_date_time,120) as start_date_time, convert(varchar(20),end_date_time,120) end_date_time,
 			cast(datediff(minute,start_date_time,end_date_time)/60 as varchar)+'h ' + cast(datediff(minute,start_date_time,end_date_time)%60 as varchar)+'m' processing_time
 			from dqs_staging.dbo.stg_import_log
 			where 1=1";			
@@ -125,7 +125,7 @@ class MaintenanceController extends Controller
 	public function reject_log(Request $request)
 	{
 		$query ="			
-			select concat(b.contact_type,' - ',a.file_instance) file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
+			select row_number() over (order by b.contact_type asc, a.file_instance asc, cif_no asc) seq, concat(b.contact_type,' - ',a.file_instance) file_name, a.reject_date, cif_no, own_branch_code, c.[desc] own_branch, a.contact_branch_code, d.[desc] contact_branch, citizen_id, birth_date, reject_desc
 			from dqs_reject_log a
 			left outer join dqs_file b
 			on a.file_id = b.file_id
@@ -252,7 +252,7 @@ class MaintenanceController extends Controller
 	public function usage_log(Request $request)
 	{
 		$query ="			
-			select convert(varchar, a.usage_dttm, 120) usage_dttm, a.personnel_id, b.thai_full_name, c.menu_name, d.[desc] branch_name
+			select row_number() over (order by d.[desc] asc, a.usage_dttm asc, a.personnel_id asc) seq, convert(varchar, a.usage_dttm, 120) usage_dttm, a.personnel_id, b.thai_full_name, c.menu_name, d.[desc] branch_name
 			from dqs_usage_log a
 			left outer join dqs_user b
 			on a.personnel_id = b.personnel_id
@@ -264,7 +264,7 @@ class MaintenanceController extends Controller
 		";			
 			
 		$qfooter = "
-			order by branch_name asc, usage_dttm asc, personnel_id asc
+			order by branch_name asc, a.usage_dttm asc, personnel_id asc
 		";		
 		$qinput = array();
 		

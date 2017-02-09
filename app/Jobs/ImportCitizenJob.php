@@ -149,9 +149,11 @@ class ImportCitizenJob extends Job implements SelfHandling, ShouldQueue
 					$cz->amphur = iconv("tis-620", "utf-8", trim(substr($l,387,40)));
 					$cz->province = iconv("tis-620", "utf-8", trim(substr($l,427,40)));
 					// empty(iconv("tis-620", "utf-8", trim(substr($l,467,2)))) ? $cz->flag = null : $cz->flag = iconv("tis-620", "utf-8", trim(substr($l,467,2)));
-					$cz->flag = iconv("tis-620", "utf-8", trim(substr($l,467,2)));
+				//	$cz->flag = iconv("tis-620", "utf-8", trim(substr($l,467,2)));
 					// empty(iconv("tis-620", "utf-8", trim(substr($l,469,2)))) ? $cz->flag_1 = null : $cz->flag_1 = iconv("tis-620", "utf-8", trim(substr($l,469,2)));
-					$cz->flag_1 = iconv("tis-620", "utf-8", trim(substr($l,469,2)));
+				//	$cz->flag_1 = iconv("tis-620", "utf-8", trim(substr($l,469,2)));
+					$cz->flag = trim(substr($l,467,2));
+					$cz->flag_1 = trim(substr($l,469,2));
 					$cz->thai_flag = 1;
 					$cz->manual_add_flag = 0;
 					$cz->updated_by = $this->userID;
