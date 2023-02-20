@@ -75,15 +75,15 @@ return [
             'schema'   => 'public',
         ],
 
-        'sqlsrv' => [
-            'driver'   => 'sqlsrv',
-            'host'     => env('DB_HOST', '192.168.1.58,1433'),
-            'database' => env('DB_DATABASE', 'dqs_web'),
-            'username' => env('DB_USERNAME', 'sa'),
-            'password' => env('DB_PASSWORD', 'gj255902!'),
-            'charset'  => 'utf8',
-            'prefix'   => '',
-        ],
+        // 'sqlsrv' => [
+        //     'driver'   => 'sqlsrv',
+        //     'host'     => env('DB_HOST', '10.22.51.240,1433'),
+        //     'database' => env('DB_DATABASE', 'dqs_central'),
+        //     'username' => env('DB_USERNAME', 'dqs_central'),
+        //     'password' => env('DB_PASSWORD', '1234567890'),
+        //     'charset'  => 'utf8',
+        //     'prefix'   => '',
+        // ],
 
     ],
 

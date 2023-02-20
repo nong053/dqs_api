@@ -102,7 +102,8 @@ return [
                 |
                 */
 
-                'account_suffix' => '@dqs_ad.com',
+                'account_suffix' => '@gsbnet.be2456dev.ramjittidev',
+				// 'account_suffix' => '@dqs_ad.com',
 
                 /*
                 |--------------------------------------------------------------------------
@@ -118,7 +119,7 @@ return [
                 |
                 */
 
-                'domain_controllers' => ['192.168.1.58'],
+                'domain_controllers' => ['10.22.50.24'],
 
                 /*
                 |--------------------------------------------------------------------------
@@ -158,7 +159,8 @@ return [
                 |
                 */
 
-                'base_dn' => 'dc=dqs_ad,dc=com',
+                //'base_dn' => 'dc=dqs_ad,dc=com',
+				'base_dn' => 'dc=gsbnet,dc=be2456dev,dc=ramjittidev',
 
                 /*
                 |--------------------------------------------------------------------------
@@ -172,8 +174,8 @@ return [
                 |
                 */
 
-                'admin_account_suffix' => '@dqs_ad.com',
-
+                //'admin_account_suffix' => '@dqs_ad.com',
+				'admin_account_suffix' => '@gsbnet.be2456dev.ramjittidev',
                 /*
                 |--------------------------------------------------------------------------
                 | Administrator Username & Password
@@ -187,8 +189,8 @@ return [
                 |
                 */
 
-                'admin_username' => env('ADLDAP_ADMIN_USERNAME', 'Administrator'),
-                'admin_password' => env('ADLDAP_ADMIN_PASSWORD', 'gj255902!'),
+                'admin_username' => env('ADLDAP_ADMIN_USERNAME', 'sutheeratn'),
+                'admin_password' => env('ADLDAP_ADMIN_PASSWORD', 'P@ssw0rd'),
 
                 /*
                 |--------------------------------------------------------------------------

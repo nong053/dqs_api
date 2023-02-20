@@ -21,8 +21,8 @@ class User extends Model implements AuthenticatableContract,
      *
      * @var string
      */
-    protected $table = 'dqs_ldap';
-	protected $primaryKey = 'user_name';
+    protected $table = 'profile';
+	protected $primaryKey = 'email';
 	public $incrementing = false;
 //	public $timestamps = false;
 
@@ -31,7 +31,7 @@ class User extends Model implements AuthenticatableContract,
      *
      * @var array
      */
-    protected $fillable = ['user_name', 'password'];
+    protected $fillable = ['username', 'password'];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -39,4 +39,9 @@ class User extends Model implements AuthenticatableContract,
      * @var array
      */
     protected $hidden = ['password', 'remember_token'];
+	
+	public function getAuthPassword() 
+	{
+	   return $this->password; 
+	}	
 }

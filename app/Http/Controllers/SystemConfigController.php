@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\SystemConfig;
+use App\SystemConfiguration;
+use App\AppraisalFrequency;
 
-use DB;
-use Validator;
 use Auth;
+use DB;
+use File;
+use Validator;
+use Excel;
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SystemConfigController extends Controller
@@ -16,176 +21,100 @@ class SystemConfigController extends Controller
 
 	public function __construct()
 	{
+
 	   $this->middleware('jwt.auth');
 	}
-   
+	
     public function index()
     {
 		try {
-			$item = SystemConfig::firstOrFail();
+			$item = SystemConfiguration::firstOrFail();
 		} catch (ModelNotFoundException $e) {
 			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
 		}		
 		return response()->json($item);
     }
 	
-	public function kpi_date(Request $request)
+	public function month_list()
 	{
- 		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-            'default_kpi_date' => 'required|integer|min:1|max:28',
-			'kpi_date_m1' => 'required|integer|min:1|max:28',
-			'kpi_date_m2' => 'required|integer|min:1|max:28',
-			'kpi_date_m3' => 'required|integer|min:1|max:28',
-			'kpi_date_m4' => 'required|integer|min:1|max:28',
-			'kpi_date_m5' => 'required|integer|min:1|max:28',
-			'kpi_date_m6' => 'required|integer|min:1|max:28',
-			'kpi_date_m7' => 'required|integer|min:1|max:28',
-			'kpi_date_m8' => 'required|integer|min:1|max:28',
-			'kpi_date_m9' => 'required|integer|min:1|max:28',
-			'kpi_date_m10' => 'required|integer|min:1|max:28',
-			'kpi_date_m11' => 'required|integer|min:1|max:28',
-			'kpi_date_m12' => 'required|integer|min:1|max:28'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
-		
-		return response()->json(['status' => 200, 'data' => $item]);
+		$items = DB::select("
+			select month_id, month_name
+			from period_month
+			order by month_id asc
+		");
+		return response()->json($items);
 	}
 	
-	public function export_file(Request $request)
+	public function frequency_list()
 	{
-  		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-            'export_file_path' => 'required|max:500',
-			'export_citizen_max_record' => 'required|integer',
-			'export_mobile_max_record' => 'required|integer',
-			'export_include_date_flag' => 'required|boolean',
-			'export_nof_date_delete' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
- 
-		return response()->json(['status' => 200, 'data' => $item]);
-	}	
-	
-	public function import_file(Request $request)
-	{
-  		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-            'import_file_path' => 'required|max:500',
-			'import_max_file_size' => 'required|integer',
-			'import_include_date_flag' => 'required|boolean',
-			'import_nof_date_delete' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
- 
-		return response()->json(['status' => 200, 'data' => $item]);
-	}	
-	
-	public function warning_branch(Request $request)
-	{
-  		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-			'nof_contact_date' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
- 
-		return response()->json(['status' => 200, 'data' => $item]);
-	}	
-	
-	public function grade_date(Request $request)
-	{
-  		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-			'grade_calculate_date' => 'required|date|date_format:Y-m-d',
-			'grade_data_source' => 'required|max:1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
- 
-		return response()->json(['status' => 200, 'data' => $item]);
-	}	
-	
-	public function default_role (Request $request)
-	{
-  		try {
-			$item = SystemConfig::firstOrFail();
-		} catch (ModelNotFoundException $e) {
-			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
-		}	
-		
-        $validator = Validator::make($request->all(), [
-			'position_branch_role' => 'required|max:255',
-			'cc_poweruser_role' => 'required|max:255',
-			'position_poweruser_role' => 'required|max:255'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 400, 'data' => $validator->errors()]);
-        } else {
-			$item->fill($request->all());
-			$item->updated_by = Auth::user()->personnel_id;
-			$item->save();
-		}		
- 
-		return response()->json(['status' => 200, 'data' => $item]);		
+		$items = DB::select("
+			select frequency_id, frequency_name
+			from appraisal_frequency
+			where frequency_month_value > 0
+			order by frequency_id asc
+		");
+		return response()->json($items);	
 	}
+	
+	public function update(Request $request)
+	{
+		$errors = array();
+		try {
+			$item = SystemConfiguration::firstOrFail();
+		} catch (ModelNotFoundException $e) {
+			return response()->json(['status' => 404, 'data' => 'System Configuration not found in DB.']);
+		}		
+		
+		$validator = Validator::make($request->all(), [
+			'current_appraisal_year' => 'required|integer',
+			'period_start_month_id' => 'required|integer',
+			'appraisal_frequency_id' => 'required|integer',
+			'bonus_frequency_id' => 'required|integer',
+			'bonus_prorate' => 'required|max:100',
+			'daily_bonus_rate' => 'required|numeric',
+			'monthly_bonus_rate' => 'required|numeric',
+			'nof_date_bonus' => 'required|integer',
+			'salary_raise_frequency_id' => 'required|integer',
+			'result_type' => 'required|integer',
+			'raise_type' => 'required|integer',
+			'theme_color' => 'required|max:15',
+			'email_reminder_flag' => 'boolean',
+			'mail_driver' => 'max:50',
+			'mail_host' => 'max:50',
+			'mail_port' => 'max:50',
+			'mail_username' => 'max:50',
+			'mail_password' => 'max:50',
+			'mail_encryption' => 'max:50',
+			'web_domain' => 'max:255'
+		]);
+
+		if ($validator->fails()) {
+			$errors = $validator->errors()->toArray();		
+			return response()->json(['status' => 400, 'data' => $errors]);
+		} else {
+			$af = AppraisalFrequency::find($request->appraisal_frequency_id);
+			$bf = AppraisalFrequency::find($request->bonus_frequency_id);
+			$sf = AppraisalFrequency::find($request->salary_raise_frequency_id);
+			
+			if ($bf->frequency_month_value < $af->frequency_month_value) {
+				$errors[] = "Bonus Frequency cannot be less than Appraisal Frequency.";
+			}
+			
+			if ($sf->frequency_month_value < $af->frequency_month_value) {
+				$errors[] = "Salary Raise Frequency cannot be less than Appraisal Frequency.";
+			}			
+			
+			if (!empty($errors)) {
+				return response()->json(['status' => 400, 'data' => $errors]);
+			}
+			
+			$item->fill($request->all());
+			$item->updated_by = Auth::id();
+			$item->save();
+		}
+	
+		return response()->json(['status' => 200, 'data' => $item]);
+				
+	}
+	
 }
